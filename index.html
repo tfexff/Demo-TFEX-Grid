@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
@@ -36,7 +36,7 @@
                 <!-- Tabs -->
                 <div class="hidden md:flex space-x-1 bg-slate-800 p-1 rounded-lg">
                     <button class="px-4 py-1.5 bg-blue-600 rounded-md text-sm font-medium shadow">S50M26_LONG</button>
-                    <button class="px-4 py-1.5 hover:bg-slate-700 rounded-md text-sm font-medium text-gray-300 transition">+ �Դ�������</button>
+                    <button class="px-4 py-1.5 hover:bg-slate-700 rounded-md text-sm font-medium text-gray-300 transition">+ เปิดคู่ใหม่</button>
                 </div>
             </div>
             
@@ -68,8 +68,8 @@
             <!-- Bot Control Box -->
             <div class="glass-panel p-5 rounded-xl shadow-sm border border-gray-200 flex-shrink-0">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-gray-800"><i class="fa-solid fa-robot mr-2 text-blue-500"></i>�Ǻ����ͷ</h2>
-                    <span id="bot-status-badge" class="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200">��ش�ӧҹ</span>
+                    <h2 class="text-lg font-semibold text-gray-800"><i class="fa-solid fa-robot mr-2 text-blue-500"></i>ควบคุมบอท</h2>
+                    <span id="bot-status-badge" class="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200">หยุดทำงาน</span>
                 </div>
                 <div class="flex gap-2">
                     <button id="btn-start" onclick="toggleBot(true)" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-lg font-bold shadow-lg shadow-green-200 transition transform hover:-translate-y-0.5">
@@ -83,7 +83,7 @@
 
             <!-- Trade Direction & Symbol -->
             <div class="glass-panel p-5 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden flex-shrink-0">
-                <!-- ᶺ������ ��ҹ�������ͤ�����§�� -->
+                <!-- แถบสีเล็กๆ ด้านซ้ายเพื่อความสวยงาม -->
                 <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
                 <div class="space-y-4 ml-2">
                     <div class="flex items-center justify-between">
@@ -93,11 +93,11 @@
                     <div class="flex items-center justify-between gap-2">
                         <label class="text-sm font-medium text-gray-700 w-1/4">direction</label>
                         <div class="flex w-3/4 gap-2">
-                            <!-- ���� LONG -->
+                            <!-- ปุ่ม LONG -->
                             <button id="btn-long" onclick="setDirection('LONG')" class="flex-1 py-2 rounded-md font-semibold text-sm transition bg-[#0ea5e9] text-white shadow-sm border border-[#0284c7]">
                                 LONG
                             </button>
-                            <!-- ���� SHORT -->
+                            <!-- ปุ่ม SHORT -->
                             <button id="btn-short" onclick="setDirection('SHORT')" class="flex-1 py-2 rounded-md font-semibold text-sm transition bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">
                                 SHORT
                             </button>
@@ -109,10 +109,10 @@
             <!-- Settings Form -->
             <div class="glass-panel p-5 rounded-xl shadow-sm border border-gray-200 flex-shrink-0">
                 <div class="flex justify-between items-end mb-4 border-b border-gray-100 pb-3">
-                    <h2 class="text-lg font-semibold text-gray-800">��駤�ҡ��ط�� Grid</h2>
+                    <h2 class="text-lg font-semibold text-gray-800">ตั้งค่ากลยุทธ์ Grid</h2>
                     <div class="space-x-2">
-                        <button class="text-blue-600 text-sm hover:underline"><i class="fa-solid fa-download mr-1"></i>��Ŵ</button>
-                        <button class="text-blue-600 text-sm hover:underline"><i class="fa-solid fa-upload mr-1"></i>�ѹ�֡</button>
+                        <button class="text-blue-600 text-sm hover:underline"><i class="fa-solid fa-download mr-1"></i>โหลด</button>
+                        <button class="text-blue-600 text-sm hover:underline"><i class="fa-solid fa-upload mr-1"></i>บันทึก</button>
                     </div>
                 </div>
 
@@ -120,32 +120,32 @@
                     <!-- Core Settings -->
                     <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 space-y-3">
                         <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium text-gray-700">��ͺ�� (Upper Bound)</label>
+                            <label class="text-sm font-medium text-gray-700">กรอบบน (Upper Bound)</label>
                             <input type="number" value="820.00" class="w-32 px-3 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium text-gray-700">��ͺ��ҧ (Lower Bound)</label>
+                            <label class="text-sm font-medium text-gray-700">กรอบล่าง (Lower Bound)</label>
                             <input type="number" value="779.50" class="w-32 px-3 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium text-gray-700">�ӹǹ��Ե (Grids)</label>
+                            <label class="text-sm font-medium text-gray-700">จำนวนกริต (Grids)</label>
                             <input type="number" value="20" class="w-32 px-3 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium text-gray-700">�ӹǹ�ѭ�ҵ�����</label>
+                            <label class="text-sm font-medium text-gray-700">จำนวนสัญญาต่อไม้</label>
                             <input type="number" value="1.00" class="w-32 px-3 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                     </div>
 
                     <!-- Conditions -->
                     <div class="space-y-3">
-                        <h3 class="text-sm font-semibold text-gray-500 uppercase">���͹䢤�������§</h3>
+                        <h3 class="text-sm font-semibold text-gray-500 uppercase">เงื่อนไขความเสี่ยง</h3>
                         <div class="flex items-center justify-between">
-                            <label class="text-sm text-gray-700">�Ҥ�������ӧҹ (Activation)</label>
-                            <input type="number" placeholder="�Ѩ�غѹ" class="w-32 px-3 py-1 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <label class="text-sm text-gray-700">ราคาเริ่มทำงาน (Activation)</label>
+                            <input type="number" placeholder="ปัจจุบัน" class="w-32 px-3 py-1 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div class="flex items-center justify-between">
-                            <label class="text-sm text-gray-700">Stop Loss (��ش�������ش)</label>
+                            <label class="text-sm text-gray-700">Stop Loss (หยุดเมื่อหลุด)</label>
                             <input type="number" value="769.00" class="w-32 px-3 py-1 border border-red-300 bg-red-50 text-red-700 rounded-md text-right text-sm focus:ring-2 focus:ring-red-500 outline-none">
                         </div>
                     </div>
@@ -153,27 +153,27 @@
                     <!-- Advanced Dropdown -->
                     <div class="pt-2 border-t border-gray-100">
                         <button onclick="document.getElementById('advanced-settings').classList.toggle('hidden')" class="w-full flex justify-between items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition">
-                            <span><i class="fa-solid fa-sliders mr-2"></i>��駤�Ң���٧ (Advanced Options)</span>
+                            <span><i class="fa-solid fa-sliders mr-2"></i>ตั้งค่าขั้นสูง (Advanced Options)</span>
                             <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         
                         <div id="advanced-settings" class="hidden mt-3 space-y-2 bg-gray-50 p-3 rounded-lg text-sm">
                             <div class="flex justify-between items-center">
-                                <span>�Ǻ���͹�Դ��Ҵ (Batch Fill)</span>
+                                <span>รวบไม้ตอนเปิดตลาด (Batch Fill)</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                   <input type="checkbox" class="sr-only peer" checked>
                                   <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                                 </label>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span>����͹��ͺ�ѵ��ѵ� (Auto Shift)</span>
+                                <span>เลื่อนกรอบอัตโนมัติ (Auto Shift)</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                   <input type="checkbox" class="sr-only peer">
                                   <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                                 </label>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span>��������ش����</span>
+                                <span>โหมดไม้สุดท้าย</span>
                                 <select class="px-2 py-1 border rounded text-xs">
                                     <option>Hard Stop</option>
                                     <option>Let Profit Run</option>
@@ -191,31 +191,31 @@
             <!-- KPI Cards -->
             <div class="grid grid-cols-4 gap-4">
                 <div class="glass-panel p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 relative overflow-hidden">
-                    <div class="text-xs text-gray-500 mb-1">�ҤһѨ�غѹ (S50M26)</div>
+                    <div class="text-xs text-gray-500 mb-1">ราคาปัจจุบัน (S50M26)</div>
                     <div class="text-2xl font-bold text-gray-800 flex items-center">
                         <span id="current-price">798.50</span> 
                         <i id="price-trend" class="fa-solid fa-caret-up text-green-500 text-lg ml-2"></i>
                     </div>
                 </div>
                 <div class="glass-panel p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-green-500">
-                    <div class="text-xs text-gray-500 mb-1">����/�Ҵ�ع��� (PnL)</div>
+                    <div class="text-xs text-gray-500 mb-1">กำไร/ขาดทุนรวม (PnL)</div>
                     <div class="text-2xl font-bold text-green-600">+12,500 <span class="text-sm font-normal">THB</span></div>
                 </div>
                 <div class="glass-panel p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-yellow-500">
-                    <div class="text-xs text-gray-500 mb-1">ʶҹж�ͤ�ͧ�Ѩ�غѹ</div>
-                    <div class="text-2xl font-bold text-gray-800">5 <span class="text-sm font-normal text-gray-500">�ѭ�� (Long)</span></div>
-                    <div class="text-xs text-gray-400 mt-1">�ع�����: 801.20</div>
+                    <div class="text-xs text-gray-500 mb-1">สถานะถือครองปัจจุบัน</div>
+                    <div class="text-2xl font-bold text-gray-800">5 <span class="text-sm font-normal text-gray-500">สัญญา (Long)</span></div>
+                    <div class="text-xs text-gray-400 mt-1">ทุนเฉลี่ย: 801.20</div>
                 </div>
                 <div class="glass-panel p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-purple-500">
-                    <div class="text-xs text-gray-500 mb-1">�Դ�ӡ������� (Matched)</div>
-                    <div class="text-2xl font-bold text-gray-800">12 <span class="text-sm font-normal text-gray-500">�ͺ</span></div>
+                    <div class="text-xs text-gray-500 mb-1">ปิดทำกำไรแล้ว (Matched)</div>
+                    <div class="text-2xl font-bold text-gray-800">12 <span class="text-sm font-normal text-gray-500">รอบ</span></div>
                 </div>
             </div>
 
             <!-- Visual Grid Monitor (THE MOST IMPORTANT ADDITION) -->
             <div class="glass-panel p-6 rounded-xl shadow-sm border border-gray-200">
                 <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <i class="fa-solid fa-chart-line mr-2 text-indigo-500"></i>ʶҹ��Ҥ�㹡�ͺ Grid
+                    <i class="fa-solid fa-chart-line mr-2 text-indigo-500"></i>สถานะราคาในกรอบ Grid
                 </h2>
                 
                 <div class="relative w-full h-16 mt-6">
@@ -227,13 +227,13 @@
                     <!-- Lower Bound Marker -->
                     <div class="absolute top-1/2 left-[10%] w-0.5 h-8 bg-blue-600 transform -translate-y-1/2">
                         <div class="absolute -bottom-6 -left-4 text-xs font-bold text-blue-600">779.50</div>
-                        <div class="absolute -top-6 -left-6 text-xs text-gray-500 whitespace-nowrap">��ͺ��ҧ</div>
+                        <div class="absolute -top-6 -left-6 text-xs text-gray-500 whitespace-nowrap">กรอบล่าง</div>
                     </div>
                     
                     <!-- Upper Bound Marker -->
                     <div class="absolute top-1/2 right-[10%] w-0.5 h-8 bg-blue-600 transform -translate-y-1/2">
                         <div class="absolute -bottom-6 -left-4 text-xs font-bold text-blue-600">820.00</div>
-                        <div class="absolute -top-6 -left-4 text-xs text-gray-500 whitespace-nowrap">��ͺ��</div>
+                        <div class="absolute -top-6 -left-4 text-xs text-gray-500 whitespace-nowrap">กรอบบน</div>
                     </div>
 
                     <!-- Stop Loss Marker -->
@@ -280,11 +280,11 @@
                     <div class="text-green-400">[11:25:00] System initialized. Waiting for bot start...</div>
                     <div class="opacity-50">---------------------------------------------------</div>
                     <div class="text-blue-300">[11:27:13] Orders snapshot - pending/holding = 5</div>
-                    <div>[11:27:13] ���觤���� | S50M26 Long 1@798.0 | order_id=1000001 | client=grid-L3</div>
-                    <div>[11:27:13] ���觤���� | S50M26 Long 1@800.0 | order_id=1000002 | client=grid-L4</div>
-                    <div class="text-yellow-400">[11:27:13] ������� | S50M26 Long 1@801.0 | order_id=1000003 | client=pos-L1</div>
-                    <div class="text-yellow-400">[11:27:13] ������� | S50M26 Long 1@799.0 | order_id=1000004 | client=pos-L2</div>
-                    <div>[11:27:13] ���觤���� | S50M26 Long 1@802.0 | order_id=1000005 | client=grid-L5</div>
+                    <div>[11:27:13] รอส่งคำสั่ง | S50M26 Long 1@798.0 | order_id=1000001 | client=grid-L3</div>
+                    <div>[11:27:13] รอส่งคำสั่ง | S50M26 Long 1@800.0 | order_id=1000002 | client=grid-L4</div>
+                    <div class="text-yellow-400">[11:27:13] ถืออยู่ | S50M26 Long 1@801.0 | order_id=1000003 | client=pos-L1</div>
+                    <div class="text-yellow-400">[11:27:13] ถืออยู่ | S50M26 Long 1@799.0 | order_id=1000004 | client=pos-L2</div>
+                    <div>[11:27:13] รอส่งคำสั่ง | S50M26 Long 1@802.0 | order_id=1000005 | client=grid-L5</div>
                     <div id="new-logs"></div>
                     <div id="typing-cursor" class="inline-block w-2 h-4 bg-green-500 animate-pulse mt-1"></div>
                 </div>
@@ -301,9 +301,9 @@
         let currentDirection = 'LONG';
 
         function setDirection(dir) {
-            // ��ͧ�ѹ�������¹��觶�Һͷ���ѧ�ѹ����
+            // ป้องกันการเปลี่ยนฝั่งถ้าบอทกำลังรันอยู่
             if (isBotRunning) {
-                alert("�������ö����¹��ȷҧ��㹢�з��ͷ���ѧ�ӧҹ");
+                alert("ไม่สามารถเปลี่ยนทิศทางได้ในขณะที่บอทกำลังทำงาน");
                 return;
             }
 
@@ -346,7 +346,7 @@
                 btnStop.classList.add('hover:bg-red-600', 'shadow-lg', 'shadow-red-200', 'transform', 'hover:-translate-y-0.5');
                 btnStop.disabled = false;
 
-                statusBadge.textContent = "���ѧ�ӧҹ";
+                statusBadge.textContent = "กำลังทำงาน";
                 statusBadge.className = "px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200 animate-pulse";
 
                 logContainer.innerHTML += `<div class="text-green-400 mt-2">[${new Date().toLocaleTimeString()}] BOT STARTED. Placing grid orders...</div>`;
@@ -365,7 +365,7 @@
                 btnStart.classList.remove('bg-gray-200', 'text-gray-500');
                 btnStart.disabled = false;
 
-                statusBadge.textContent = "��ش�ӧҹ";
+                statusBadge.textContent = "หยุดทำงาน";
                 statusBadge.className = "px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200";
 
                 logContainer.innerHTML += `<div class="text-red-400 mt-2">[${new Date().toLocaleTimeString()}] BOT HALTED. Cancelling pending orders...</div>`;
@@ -409,8 +409,8 @@
             if(Math.random() > 0.7) {
                 const isBuy = Math.random() > 0.5;
                 const logMsg = isBuy ? 
-                    `<div class="text-cyan-300">[${new Date().toLocaleTimeString()}] �Ѻ�������� | Long 1@${currentPrice}</div>` : 
-                    `<div class="text-pink-300">[${new Date().toLocaleTimeString()}] �Դ�ӡ��� | Short 1@${currentPrice} (Profit +1.5)</div>`;
+                    `<div class="text-cyan-300">[${new Date().toLocaleTimeString()}] จับคู่สำเร็จ | Long 1@${currentPrice}</div>` : 
+                    `<div class="text-pink-300">[${new Date().toLocaleTimeString()}] ปิดทำกำไร | Short 1@${currentPrice} (Profit +1.5)</div>`;
                 document.getElementById('new-logs').innerHTML += logMsg;
                 
                 const logBox = document.querySelector('.bg-slate-900');
