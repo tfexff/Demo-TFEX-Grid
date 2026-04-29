@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TFF Grid Trading Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="text-gray-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Navbar -->
+    <nav class="bg-slate-900 text-white shadow-lg z-10">
+        <div class="px-6 flex justify-between items-center h-16">
+            <div class="flex items-center gap-6">
+                <div class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300">
+                    <i class="fa-solid fa-layer-group mr-2 text-blue-400"></i>TFF Grid Trading
+                </div>
+                <!-- Tabs -->
+                <div class="hidden md:flex space-x-1 bg-slate-800 p-1 rounded-lg">
+                    <button class="px-4 py-1.5 bg-blue-600 rounded-md text-sm font-medium shadow">S50M26_LONG</button>
+                    <button class="px-4 py-1.5 hover:bg-slate-700 rounded-md text-sm font-medium text-gray-300 transition">+ เปิดคู่ใหม่</button>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="flex items-center bg-slate-800 rounded-lg px-3 py-1 border border-slate-700">
+                    <span class="text-xs text-gray-400 mr-2">ENV:</span>
+                    <select class="bg-transparent text-sm font-medium focus:outline-none text-green-400">
+                        <option>UAT (Demo)</option>
+                        <option>Production (Live)</option>
+                    </select>
+                </div>
+                <div class="text-right text-xs text-gray-400">
+                    <div id="live-time">2026-04-29 14:04:21</div>
+                    <div class="text-green-400"><i class="fa-solid fa-circle text-[8px] animate-pulse"></i> System Online</div>
+                </div>
+                <button class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600 transition">
+                    <i class="fa-solid fa-user"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex overflow-hidden p-4 gap-4">
+        
+        <!-- Left Panel: Strategy Settings (Fixed Width + Scrollable) -->
+        <div class="w-[340px] xl:w-[380px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto h-full pr-2 pb-4">
+            
+            <!-- Bot Control Box -->
+            <div class="glass-panel p-5 rounded-xl shadow-sm border border-gray-200 flex-shrink-0">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800"><i class="fa-solid fa-robot mr-2 text-blue-500"></i>ควบคุมบอท</h2>
+                    <span id="bot-status-badge" class="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200">หยุดทำงาน</span>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-start" onclick="toggleBot(true)" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-lg font-bold shadow-lg shadow-green-200 transition transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-play mr-2"></i> START BOT
+                    </button>
+                    <button id="btn-stop" onclick="toggleBot(false)" class="flex-1 bg-gray-200 text-gray-500 py-3 rounded-lg font-bold cursor-not-allowed transition" disabled>
+                        <i class="fa-solid fa-stop mr-2"></i> STOP / HALT
+                    </button>
+                </div>
+            </div>
+
+            <!-- Trade Direction & Symbol -->
+            <div class="glass-panel p-5 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden flex-shrink-0">
+                <!-- แถบสีเล็กๆ ด้านซ้ายเพื่อความสวยงาม -->
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
+                <div class="space-y-4 ml-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-gray-700 w-1/4">symbol</label>
+                        <input type="text" value="S50M26" class="w-3/4 px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-800 uppercase focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <label class="text-sm font-medium text-gray-700 w-1/4">direction</label>
+                        <div class="flex w-3/4 gap-2">
+                            <!-- ปุ่ม LONG -->
+                            <button id="btn-long" onclick="setDirection('LONG')" class="flex-1 py-2 rounded-md font-semibold text-sm transition bg-[#0ea5e9] text-white shadow-sm border border-[#0284c7]">
+                                LONG
+                            </button>
+                            <!-- ปุ่ม SHORT -->
+                            <button id="btn-short" onclick="setDirection('SHORT')" class="flex-1 py-2 rounded-md font-semibold text-sm transition bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">
+                                SHORT
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Form -->
+            <div class="glass-panel p-5 rounded-xl shadow-sm border border-gray-200 flex-shrink-0">
+                <div class="flex justify-between items-end mb-4 border-b border-gray-100 pb-3">
+                    <h2 class="text-lg font-semibold text-gray-800">ตั้งค่ากลยุทธ์ Grid</h2>
+                    <div class="space-x-2">
+                        <button class="text-blue-600 text-sm hover:underline"><i class="fa-solid fa-download mr-1"></i>โหลด</button>
+                        <button class="text-blue-600 text-sm hover:underline"><i class="fa-solid fa-upload mr-1"></i>บันทึก</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Core Settings -->
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-medium text-gray-700">กรอบบน (Upper Bound)</label>
+                            <input type="number" value="820.00" class="w-32 px-3 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-medium text-gray-700">กรอบล่าง (Lower Bound)</label>
+                            <input type="number" value="779.50" class="w-32 px-3 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-medium text-gray-700">จำนวนกริต (Grids)</label>
+                            <input type="number" value="20" class="w-32 px-3 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-medium text-gray-700">จำนวนสัญญาต่อไม้</label>
+                            <input type="number" value="1.00" class="w-32 px-3 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Conditions -->
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-semibold text-gray-500 uppercase">เงื่อนไขความเสี่ยง</h3>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm text-gray-700">ราคาเริ่มทำงาน (Activation)</label>
+                            <input type="number" placeholder="ปัจจุบัน" class="w-32 px-3 py-1 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm text-gray-700">Stop Loss (หยุดเมื่อหลุด)</label>
+                            <input type="number" value="769.00" class="w-32 px-3 py-1 border border-red-300 bg-red-50 text-red-700 rounded-md text-right text-sm focus:ring-2 focus:ring-red-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Advanced Dropdown -->
+                    <div class="pt-2 border-t border-gray-100">
+                        <button onclick="document.getElementById('advanced-settings').classList.toggle('hidden')" class="w-full flex justify-between items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition">
+                            <span><i class="fa-solid fa-sliders mr-2"></i>ตั้งค่าขั้นสูง (Advanced Options)</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        
+                        <div id="advanced-settings" class="hidden mt-3 space-y-2 bg-gray-50 p-3 rounded-lg text-sm">
+                            <div class="flex justify-between items-center">
+                                <span>รวบไม้ตอนเปิดตลาด (Batch Fill)</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" class="sr-only peer" checked>
+                                  <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>เลื่อนกรอบอัตโนมัติ (Auto Shift)</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" class="sr-only peer">
+                                  <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>โหมดไม้สุดท้าย</span>
+                                <select class="px-2 py-1 border rounded text-xs">
+                                    <option>Hard Stop</option>
+                                    <option>Let Profit Run</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Dashboard & Logs (Takes remaining space) -->
+        <div class="flex-1 flex flex-col gap-4 overflow-hidden min-w-0">
+            
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-4 gap-4">
+                <div class="glass-panel p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 relative overflow-hidden">
+                    <div class="text-xs text-gray-500 mb-1">ราคาปัจจุบัน (S50M26)</div>
+                    <div class="text-2xl font-bold text-gray-800 flex items-center">
+                        <span id="current-price">798.50</span> 
+                        <i id="price-trend" class="fa-solid fa-caret-up text-green-500 text-lg ml-2"></i>
+                    </div>
+                </div>
+                <div class="glass-panel p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-green-500">
+                    <div class="text-xs text-gray-500 mb-1">กำไร/ขาดทุนรวม (PnL)</div>
+                    <div class="text-2xl font-bold text-green-600">+12,500 <span class="text-sm font-normal">THB</span></div>
+                </div>
+                <div class="glass-panel p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-yellow-500">
+                    <div class="text-xs text-gray-500 mb-1">สถานะถือครองปัจจุบัน</div>
+                    <div class="text-2xl font-bold text-gray-800">5 <span class="text-sm font-normal text-gray-500">สัญญา (Long)</span></div>
+                    <div class="text-xs text-gray-400 mt-1">ทุนเฉลี่ย: 801.20</div>
+                </div>
+                <div class="glass-panel p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-purple-500">
+                    <div class="text-xs text-gray-500 mb-1">ปิดทำกำไรแล้ว (Matched)</div>
+                    <div class="text-2xl font-bold text-gray-800">12 <span class="text-sm font-normal text-gray-500">รอบ</span></div>
+                </div>
+            </div>
+
+            <!-- Visual Grid Monitor (THE MOST IMPORTANT ADDITION) -->
+            <div class="glass-panel p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fa-solid fa-chart-line mr-2 text-indigo-500"></i>สถานะราคาในกรอบ Grid
+                </h2>
+                
+                <div class="relative w-full h-16 mt-6">
+                    <!-- Background Bar -->
+                    <div class="absolute top-1/2 left-0 w-full h-3 bg-gray-200 rounded-full transform -translate-y-1/2"></div>
+                    <!-- Active Grid Zone -->
+                    <div class="absolute top-1/2 left-[10%] w-[80%] h-3 bg-gradient-to-r from-blue-200 via-green-200 to-blue-200 rounded-full transform -translate-y-1/2 border-y border-gray-300"></div>
+                    
+                    <!-- Lower Bound Marker -->
+                    <div class="absolute top-1/2 left-[10%] w-0.5 h-8 bg-blue-600 transform -translate-y-1/2">
+                        <div class="absolute -bottom-6 -left-4 text-xs font-bold text-blue-600">779.50</div>
+                        <div class="absolute -top-6 -left-6 text-xs text-gray-500 whitespace-nowrap">กรอบล่าง</div>
+                    </div>
+                    
+                    <!-- Upper Bound Marker -->
+                    <div class="absolute top-1/2 right-[10%] w-0.5 h-8 bg-blue-600 transform -translate-y-1/2">
+                        <div class="absolute -bottom-6 -left-4 text-xs font-bold text-blue-600">820.00</div>
+                        <div class="absolute -top-6 -left-4 text-xs text-gray-500 whitespace-nowrap">กรอบบน</div>
+                    </div>
+
+                    <!-- Stop Loss Marker -->
+                    <div class="absolute top-1/2 left-[2%] w-0.5 h-6 bg-red-500 transform -translate-y-1/2">
+                        <div class="absolute -bottom-6 -left-4 text-xs font-bold text-red-500">769.00</div>
+                        <div class="absolute -top-6 -left-3 text-xs text-red-500 whitespace-nowrap">SL</div>
+                    </div>
+
+                    <!-- Current Price Indicator (Animated) -->
+                    <div id="price-indicator" class="absolute top-1/2 left-[45%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-500 ease-in-out z-10">
+                        <div class="bg-gray-800 text-white text-xs font-bold py-1 px-2 rounded mb-1 shadow-lg flex items-center gap-1">
+                            <span id="indicator-price">798.50</span>
+                        </div>
+                        <div class="w-4 h-4 bg-white border-4 border-gray-800 rounded-full shadow-md"></div>
+                    </div>
+                    
+                    <!-- Visual Grid Lines (Decoration) -->
+                    <div class="absolute top-1/2 left-[10%] w-[80%] h-3 flex justify-between px-1 transform -translate-y-1/2 opacity-20 pointer-events-none">
+                        <div class="w-px h-full bg-black"></div><div class="w-px h-full bg-black"></div><div class="w-px h-full bg-black"></div>
+                        <div class="w-px h-full bg-black"></div><div class="w-px h-full bg-black"></div><div class="w-px h-full bg-black"></div>
+                        <div class="w-px h-full bg-black"></div><div class="w-px h-full bg-black"></div><div class="w-px h-full bg-black"></div>
+                        <div class="w-px h-full bg-black"></div><div class="w-px h-full bg-black"></div><div class="w-px h-full bg-black"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs & Orders -->
+            <div class="glass-panel rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
+                <!-- Tab Headers -->
+                <div class="flex border-b border-gray-200 bg-gray-50 rounded-t-xl">
+                    <button class="px-6 py-3 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 bg-white">
+                        <i class="fa-solid fa-list-ul mr-2"></i>Activity Logs
+                    </button>
+                    <button class="px-6 py-3 text-sm font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition">
+                        <i class="fa-solid fa-briefcase mr-2"></i>Open Orders (5)
+                    </button>
+                    <button class="px-6 py-3 text-sm font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition">
+                        <i class="fa-solid fa-clock-rotate-left mr-2"></i>Order History
+                    </button>
+                </div>
+                
+                <!-- Terminal/Log Output -->
+                <div class="flex-1 bg-slate-900 p-4 overflow-y-auto font-mono text-[13px] text-gray-300 leading-relaxed">
+                    <div class="text-green-400">[11:25:00] System initialized. Waiting for bot start...</div>
+                    <div class="opacity-50">---------------------------------------------------</div>
+                    <div class="text-blue-300">[11:27:13] Orders snapshot - pending/holding = 5</div>
+                    <div>[11:27:13] รอส่งคำสั่ง | S50M26 Long 1@798.0 | order_id=1000001 | client=grid-L3</div>
+                    <div>[11:27:13] รอส่งคำสั่ง | S50M26 Long 1@800.0 | order_id=1000002 | client=grid-L4</div>
+                    <div class="text-yellow-400">[11:27:13] ถืออยู่ | S50M26 Long 1@801.0 | order_id=1000003 | client=pos-L1</div>
+                    <div class="text-yellow-400">[11:27:13] ถืออยู่ | S50M26 Long 1@799.0 | order_id=1000004 | client=pos-L2</div>
+                    <div>[11:27:13] รอส่งคำสั่ง | S50M26 Long 1@802.0 | order_id=1000005 | client=grid-L5</div>
+                    <div id="new-logs"></div>
+                    <div id="typing-cursor" class="inline-block w-2 h-4 bg-green-500 animate-pulse mt-1"></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- Mock Data & Interaction Logic ---
+        let isBotRunning = false;
+        let currentPrice = 798.50;
+        let priceInterval;
+        let currentDirection = 'LONG';
+
+        function setDirection(dir) {
+            // ป้องกันการเปลี่ยนฝั่งถ้าบอทกำลังรันอยู่
+            if (isBotRunning) {
+                alert("ไม่สามารถเปลี่ยนทิศทางได้ในขณะที่บอทกำลังทำงาน");
+                return;
+            }
+
+            currentDirection = dir;
+            const btnLong = document.getElementById('btn-long');
+            const btnShort = document.getElementById('btn-short');
+
+            if (dir === 'LONG') {
+                btnLong.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-[#0ea5e9] text-white shadow-sm border border-[#0284c7]";
+                btnShort.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-red-50 text-red-700 border border-red-200 hover:bg-red-100";
+            } else {
+                btnShort.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-[#ef4444] text-white shadow-sm border border-[#b91c1c]";
+                btnLong.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100";
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('live-time').innerText = now.toISOString().slice(0, 19).replace('T', ' ');
+        }
+        setInterval(updateClock, 1000);
+
+        function toggleBot(start) {
+            const btnStart = document.getElementById('btn-start');
+            const btnStop = document.getElementById('btn-stop');
+            const statusBadge = document.getElementById('bot-status-badge');
+            const logContainer = document.getElementById('new-logs');
+
+            isBotRunning = start;
+
+            if (start) {
+                // UI changes for START
+                btnStart.classList.replace('bg-gradient-to-r', 'bg-gray-200');
+                btnStart.classList.replace('text-white', 'text-gray-500');
+                btnStart.classList.remove('hover:from-green-600', 'shadow-lg', 'transform', 'hover:-translate-y-0.5');
+                btnStart.disabled = true;
+
+                btnStop.classList.replace('bg-gray-200', 'bg-red-500');
+                btnStop.classList.replace('text-gray-500', 'text-white');
+                btnStop.classList.add('hover:bg-red-600', 'shadow-lg', 'shadow-red-200', 'transform', 'hover:-translate-y-0.5');
+                btnStop.disabled = false;
+
+                statusBadge.textContent = "กำลังทำงาน";
+                statusBadge.className = "px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200 animate-pulse";
+
+                logContainer.innerHTML += `<div class="text-green-400 mt-2">[${new Date().toLocaleTimeString()}] BOT STARTED. Placing grid orders...</div>`;
+                
+                // Simulate price movement
+                priceInterval = setInterval(simulatePriceMovement, 2500);
+
+            } else {
+                // UI changes for STOP
+                btnStop.classList.replace('bg-red-500', 'bg-gray-200');
+                btnStop.classList.replace('text-white', 'text-gray-500');
+                btnStop.classList.remove('hover:bg-red-600', 'shadow-lg', 'transform', 'hover:-translate-y-0.5');
+                btnStop.disabled = true;
+
+                btnStart.classList.add('bg-gradient-to-r', 'text-white', 'hover:from-green-600', 'shadow-lg', 'transform', 'hover:-translate-y-0.5');
+                btnStart.classList.remove('bg-gray-200', 'text-gray-500');
+                btnStart.disabled = false;
+
+                statusBadge.textContent = "หยุดทำงาน";
+                statusBadge.className = "px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200";
+
+                logContainer.innerHTML += `<div class="text-red-400 mt-2">[${new Date().toLocaleTimeString()}] BOT HALTED. Cancelling pending orders...</div>`;
+                clearInterval(priceInterval);
+            }
+            
+            // Auto scroll logs
+            const logBox = document.querySelector('.bg-slate-900');
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function simulatePriceMovement() {
+            // Random price walk between 790 and 810
+            const change = (Math.random() * 2 - 1).toFixed(1);
+            currentPrice = parseFloat((currentPrice + parseFloat(change)).toFixed(2));
+            
+            // Update Text
+            document.getElementById('current-price').innerText = currentPrice.toFixed(2);
+            document.getElementById('indicator-price').innerText = currentPrice.toFixed(2);
+            
+            // Update Trend Icon
+            const trendIcon = document.getElementById('price-trend');
+            if(change > 0) {
+                trendIcon.className = "fa-solid fa-caret-up text-green-500 text-lg ml-2";
+            } else {
+                trendIcon.className = "fa-solid fa-caret-down text-red-500 text-lg ml-2";
+            }
+
+            // Update Visual Grid Position (Mapping 770-830 to 5%-95% left position approx)
+            // Lower = 779.5 (10%), Upper = 820 (90%) => Range = 40.5
+            const lowerBound = 779.5;
+            const upperBound = 820.0;
+            let percentage = 10 + ((currentPrice - lowerBound) / (upperBound - lowerBound)) * 80;
+            
+            // Clamp value so marker doesn't fly off screen
+            percentage = Math.max(2, Math.min(percentage, 98)); 
+            
+            document.getElementById('price-indicator').style.left = `${percentage}%`;
+
+            // Randomly add a log entry if bot is running
+            if(Math.random() > 0.7) {
+                const isBuy = Math.random() > 0.5;
+                const logMsg = isBuy ? 
+                    `<div class="text-cyan-300">[${new Date().toLocaleTimeString()}] จับคู่สำเร็จ | Long 1@${currentPrice}</div>` : 
+                    `<div class="text-pink-300">[${new Date().toLocaleTimeString()}] ปิดทำกำไร | Short 1@${currentPrice} (Profit +1.5)</div>`;
+                document.getElementById('new-logs').innerHTML += logMsg;
+                
+                const logBox = document.querySelector('.bg-slate-900');
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>
