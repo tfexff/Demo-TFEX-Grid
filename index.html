@@ -17,6 +17,18 @@
         body {
             font-family: 'Prompt', sans-serif;
             background-color: #f3f4f6;
+            /* ป้องกันการคลุมดำข้อความ (Anti-Select) */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        /* อนุญาตให้พิมพ์และคลุมดำในช่องกรอกข้อมูล (Input) ได้ตามปกติ */
+        input, select, textarea {
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            -ms-user-select: auto;
+            user-select: auto;
         }
         /* Custom Scrollbar for Desktop */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -30,7 +42,7 @@
         }
     </style>
 </head>
-<body class="text-gray-800 min-h-screen flex flex-col lg:h-screen lg:overflow-hidden">
+<body class="text-gray-800 min-h-screen flex flex-col lg:h-screen lg:overflow-hidden" oncontextmenu="return false;" onselectstart="return false;" ondragstart="return false;">
 
     <!-- Custom Modal (Popup) -->
     <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center opacity-0 transition-opacity duration-300">
@@ -707,7 +719,7 @@
                     isResuming = true;
                     
                     const logContainer = document.getElementById('new-logs');
-                    logContainer.insertAdjacentHTML('beforeend', `<div class="text-blue-400 mt-2">[${new Date().toLocaleTimeString()}] 📥 SYSTEM STATE RESTORED FROM SAVE FILE.</div>`);
+                    logContainer.insertAdjacentHTML('beforeend', `<div class="text-blue-400 mt-2">[${new Date().toLocaleTimeString('en-GB', { hour12: false })}] 📥 SYSTEM STATE RESTORED FROM SAVE FILE.</div>`);
                     const scrollBox = document.getElementById('tab-activity');
                     scrollBox.scrollTop = scrollBox.scrollHeight;
 
@@ -926,6 +938,7 @@
             btnStop.classList.replace('bg-red-500', 'bg-gray-200');
             btnStop.classList.replace('text-white', 'text-gray-500');
             btnStop.classList.remove('hover:bg-red-600', 'shadow-lg', 'transform', 'hover:-translate-y-0.5');
+            btnStop.classList.add('cursor-not-allowed'); // สั่งให้ลูกศรห้ามกดกลับมา
             btnStop.disabled = true;
 
             btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START';
@@ -1031,6 +1044,7 @@
                 btnStop.classList.replace('bg-gray-200', 'bg-red-500');
                 btnStop.classList.replace('text-gray-500', 'text-white');
                 btnStop.classList.add('hover:bg-red-600', 'shadow-lg', 'shadow-red-200', 'transform', 'hover:-translate-y-0.5');
+                btnStop.classList.remove('cursor-not-allowed'); // เอาเครื่องหมายห้ามกดออก เพื่อให้กดได้
                 btnStop.disabled = false;
 
                 statusBadge.textContent = "กำลังทำงาน";
@@ -1068,7 +1082,8 @@
             } else {
                 btnStop.classList.replace('bg-red-500', 'bg-gray-200');
                 btnStop.classList.replace('text-white', 'text-gray-500');
-                btnStop.classList.remove('hover:bg-red-600', 'shadow-lg', 'transform', 'hover:-translate-y-0.5');
+                btnStop.classList.remove('hover:bg-red-600', 'shadow-lg', 'shadow-red-200', 'transform', 'hover:-translate-y-0.5');
+                btnStop.classList.add('cursor-not-allowed'); // ใส่สัญลักษณ์ห้ามกดกลับมาเมื่อหยุดแล้ว
                 btnStop.disabled = true;
 
                 btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START';
@@ -1215,6 +1230,40 @@
                 }
             }
         }
+
+        // --- Security & Anti-Copy System ---
+        // ป้องกันการกดปุ่มคีย์บอร์ดลัดเพื่อดูโค้ดหรือก็อปปี้
+        document.addEventListener('keydown', function(e) {
+            // ป้องกัน F12 (Developer Tools)
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                return false;
+            }
+            // ป้องกัน Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C (Inspect/Console)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
+                e.preventDefault();
+                return false;
+            }
+            // ป้องกัน Ctrl+U (View Source), Ctrl+S (Save), Ctrl+P (Print)
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's' || e.key === 'P' || e.key === 'p')) {
+                e.preventDefault();
+                return false;
+            }
+            // ป้องกัน Ctrl+C (Copy), Ctrl+X (Cut) ยกเว้นกำลังพิมพ์ในช่อง Input
+            if (e.ctrlKey && (e.key === 'C' || e.key === 'c' || e.key === 'X' || e.key === 'x')) {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+
+        // ป้องกันการ Copy เมนู (คลิกขวา Copy) หรือลากครอบข้อความ
+        document.addEventListener('copy', function(e) {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+            }
+        });
     </script>
 </body>
 </html>
