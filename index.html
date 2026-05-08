@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
@@ -9,7 +9,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <title>TFF Grid Trading Demo</title>
+    <title>TFF Grid Trading Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -63,7 +63,7 @@
                 </div>
                 <!-- Tabs (Hidden on mobile) -->
                 <div class="hidden md:flex space-x-1 bg-slate-800 p-1 rounded-lg">
-                    <button class="px-4 py-1.5 bg-blue-600 rounded-md text-sm font-medium shadow">S50M26_LONG</button>
+                    <button id="nav-tab-symbol" class="px-4 py-1.5 bg-blue-600 rounded-md text-sm font-medium shadow">S50M26_LONG</button>
                     <button class="px-4 py-1.5 hover:bg-slate-700 rounded-md text-sm font-medium text-gray-300 transition">+ เปิดคู่ใหม่</button>
                 </div>
             </div>
@@ -77,9 +77,12 @@
                         <option>Production</option>
                     </select>
                 </div>
-                <div class="hidden sm:block text-right text-xs text-gray-400">
-                    <div id="live-time"></div>
-                    <div class="text-green-400"><i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Online</div>
+                <!-- ส่วนแสดง วันที่ เวลา และ Online -->
+                <div class="hidden sm:flex items-center gap-3">
+                    <div id="live-time" class="text-xs text-gray-400 font-mono tracking-wide">--/--/---- --:--:--</div>
+                    <div class="text-xs font-medium text-green-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Online
+                    </div>
                 </div>
                 <button class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600 transition">
                     <i class="fa-solid fa-bars sm:hidden"></i>
@@ -440,6 +443,18 @@
             }, 300);
         }
 
+        // --- Update Clock ---
+        function updateClock() {
+            const now = new Date();
+            const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            const dateStr = now.toLocaleDateString('en-GB', dateOptions);
+            const timeStr = now.toLocaleTimeString('en-GB', timeOptions);
+            document.getElementById('live-time').innerText = `${dateStr} ${timeStr}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
         // --- Visual Grid Updater ---
         function updateVisualGrid() {
             let upper = parseFloat(document.getElementById('inp-upper').value);
@@ -472,11 +487,21 @@
             priceIndicator.style.left = `${percPrice}%`;
         }
 
+        // ฟังก์ชันอัปเดตชื่อแท็บด้านบน
+        function updateNavTab() {
+            const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
+            document.getElementById('nav-tab-symbol').innerText = `${symbol}_${currentDirection}`;
+        }
+
         document.getElementById('inp-upper').addEventListener('input', updateVisualGrid);
         document.getElementById('inp-lower').addEventListener('input', updateVisualGrid);
         document.getElementById('inp-risk-sl').addEventListener('input', updateVisualGrid);
+        document.getElementById('inp-symbol').addEventListener('input', updateNavTab); // อัปเดตแท็บเมื่อพิมพ์
         
-        window.addEventListener('DOMContentLoaded', updateVisualGrid);
+        window.addEventListener('DOMContentLoaded', () => {
+            updateVisualGrid();
+            updateNavTab();
+        });
 
         // --- Functions ---
         function setDirectionUI(dir) {
@@ -491,6 +516,7 @@
                 btnShort.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-[#ef4444] text-white shadow-sm border border-[#b91c1c]";
                 btnLong.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100";
             }
+            updateNavTab(); // อัปเดตแท็บเมื่อสลับทิศทาง
         }
 
         function setDirection(dir) {
