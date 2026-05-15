@@ -92,6 +92,9 @@
                 </div>
                 <!-- ส่วนแสดง วันที่ เวลา และ Online -->
                 <div class="hidden sm:flex items-center gap-3">
+                    <div id="uptime-container" class="hidden text-xs font-mono font-medium bg-slate-800 text-cyan-400 px-2 py-1 rounded border border-slate-700 items-center gap-1.5">
+                        <i class="fa-solid fa-stopwatch"></i> <span id="uptime-text">00:00:00</span>
+                    </div>
                     <div id="live-time" class="text-xs text-gray-400 font-mono tracking-wide">--/--/---- --:--:--</div>
                     <div class="text-xs font-medium text-green-400 flex items-center gap-1.5">
                         <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Online
@@ -168,7 +171,7 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <label class="text-xs lg:text-sm font-medium text-gray-700">กรอบล่าง (Lower)</label>
-                            <input type="number" id="inp-lower" value="900" step="0.1" class="w-24 lg:w-32 px-2 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
+                            <input type="number" id="inp-lower" value="990" step="0.1" class="w-24 lg:w-32 px-2 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
                         </div>
                         <div class="flex items-center justify-between">
                             <label class="text-xs lg:text-sm font-medium text-gray-700">ระยะกริด (จุด)</label>
@@ -238,7 +241,7 @@
                 <div class="glass-panel p-3 lg:p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 relative overflow-hidden">
                     <div class="text-[10px] lg:text-xs text-gray-500 mb-1">ราคาปัจจุบัน (S50M26)</div>
                     <div class="text-lg lg:text-2xl font-bold text-gray-800 flex items-center">
-                        <span id="current-price">900.0</span> 
+                        <span id="current-price">995.0</span> 
                         <i id="price-trend" class="fa-solid fa-caret-up text-green-500 text-md lg:text-lg ml-2"></i>
                     </div>
                 </div>
@@ -276,7 +279,7 @@
                     
                     <!-- Lower Bound Marker -->
                     <div class="absolute top-1/2 left-[10%] w-0.5 h-6 lg:h-8 bg-blue-600 transform -translate-y-1/2">
-                        <div id="vis-lower" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-blue-600">800.0</div>
+                        <div id="vis-lower" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-blue-600">990.0</div>
                         <div class="absolute -top-5 lg:-top-6 -left-4 lg:-left-6 text-[10px] lg:text-xs text-gray-500 whitespace-nowrap">กรอบล่าง</div>
                     </div>
                     
@@ -295,7 +298,7 @@
                     <!-- Current Price Indicator (Animated) -->
                     <div id="price-indicator" class="absolute top-1/2 left-[50%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-500 ease-in-out z-10">
                         <div class="bg-gray-800 text-white text-[10px] lg:text-xs font-bold py-0.5 px-1.5 lg:py-1 lg:px-2 rounded mb-1 shadow-lg flex items-center gap-1">
-                            <span id="indicator-price">900.0</span>
+                            <span id="indicator-price">995.0</span>
                         </div>
                         <div class="w-3 h-3 lg:w-4 lg:h-4 bg-white border-[3px] lg:border-4 border-gray-800 rounded-full shadow-md"></div>
                     </div>
@@ -389,7 +392,7 @@
 
         let isBotRunning = false;
         let isResuming = false; 
-        let currentPrice = 900.0; 
+        let currentPrice = 995.0; 
         let priceInterval;
         let currentDirection = 'LONG';
         let currentTab = 'activity';
@@ -416,6 +419,11 @@
         let targetUnrealized = null;
 
         let closedTradesHistory = [];
+        
+        // Uptime Tracking
+        let botStartTime = null;
+        let totalUptimeMs = 0;
+        let uptimeInterval = null;
 
         // --- Custom Modal / Message Box ---
         function showModal(title, message, type = 'error') {
@@ -468,6 +476,23 @@
         setInterval(updateClock, 1000);
         updateClock();
 
+        function updateUptimeDisplay() {
+            let current = totalUptimeMs;
+            if (isBotRunning && botStartTime) {
+                current += (Date.now() - botStartTime);
+            }
+            let totalSeconds = Math.floor(current / 1000);
+            let hours = Math.floor(totalSeconds / 3600);
+            let mins = Math.floor((totalSeconds % 3600) / 60);
+            let secs = totalSeconds % 60;
+            
+            let formatted = String(hours).padStart(2, '0') + ':' +
+                            String(mins).padStart(2, '0') + ':' +
+                            String(secs).padStart(2, '0');
+                
+            document.getElementById('uptime-text').innerText = formatted;
+        }
+
         // --- Visual Grid Updater ---
         function updateVisualGrid() {
             let upper = parseFloat(document.getElementById('inp-upper').value);
@@ -475,7 +500,7 @@
             let sl = parseFloat(document.getElementById('inp-risk-sl').value);
 
             if(isNaN(upper)) upper = 1000.0;
-            if(isNaN(lower)) lower = 800.0;
+            if(isNaN(lower)) lower = 990.0;
 
             document.getElementById('vis-upper').innerText = upper.toFixed(1);
             document.getElementById('vis-lower').innerText = lower.toFixed(1);
@@ -594,6 +619,8 @@
                 return;
             }
 
+            const currentUptimeToSave = totalUptimeMs + (isBotRunning && botStartTime ? Date.now() - botStartTime : 0);
+
             const saveData = {
                 version: '1.4',
                 timestamp: new Date().toISOString(),
@@ -608,7 +635,8 @@
                     currentUnrealizedPNL,
                     closedTradesHistory,
                     isWaitingActivation, activationTarget, activationDirection,
-                    stopLossTarget, targetRealized, targetUnrealized
+                    stopLossTarget, targetRealized, targetUnrealized,
+                    totalUptimeMs: currentUptimeToSave
                 },
                 inputs: {
                     symbol: document.getElementById('inp-symbol').value,
@@ -701,6 +729,8 @@
                     stopLossTarget = saveData.state.stopLossTarget || null;
                     targetRealized = saveData.state.targetRealized || null;
                     targetUnrealized = saveData.state.targetUnrealized || null;
+                    totalUptimeMs = saveData.state.totalUptimeMs || 0;
+                    botStartTime = null;
 
                     pArr = new Float64Array(saveData.state.pArr || []);
                     tArr = new Float64Array(saveData.state.tArr || []);
@@ -709,6 +739,12 @@
 
                     document.getElementById('new-logs').innerHTML = saveData.logs || '';
                     
+                    if (totalUptimeMs > 0) {
+                        document.getElementById('uptime-container').classList.remove('hidden');
+                        document.getElementById('uptime-container').classList.add('flex');
+                    }
+                    updateUptimeDisplay();
+
                     setDirectionUI(currentDirection); 
                     updateVisualGrid();
                     calculateAndUpdateAll();
@@ -940,6 +976,13 @@
 
             isBotRunning = false;
             clearInterval(priceInterval);
+            clearInterval(uptimeInterval);
+            
+            if (botStartTime) {
+                totalUptimeMs += (Date.now() - botStartTime);
+                botStartTime = null;
+            }
+            updateUptimeDisplay();
             
             const btnStart = document.getElementById('btn-start');
             const btnStop = document.getElementById('btn-stop');
@@ -1039,6 +1082,7 @@
                     
                     realizedPNL = 0; totalComm = 0; activeCount = 0; sumEntry = 0; matchedCycles = 0;
                     currentUnrealizedPNL = 0; maxTotalPnL = 0; currentDrawdownTHB = 0; maxDrawdownTHB = 0;
+                    totalUptimeMs = 0; // รีเซ็ตเวลาตอนเริ่มใหม่
                     
                     logContainer.innerHTML = ''; 
                     closedTradesHistory = [];
@@ -1046,6 +1090,12 @@
                     logContainer.insertAdjacentHTML('beforeend', `<div class="text-yellow-400 mt-2">[${timeStr}] ▶️ BOT RE-STARTED. Resuming Grid Operations.</div>`);
                     isResuming = false; 
                 }
+
+                botStartTime = Date.now();
+                document.getElementById('uptime-container').classList.remove('hidden');
+                document.getElementById('uptime-container').classList.add('flex');
+                uptimeInterval = setInterval(updateUptimeDisplay, 1000);
+                updateUptimeDisplay();
 
                 btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START'; 
                 btnStart.className = "flex-1 bg-gray-200 text-gray-500 py-3 rounded-lg font-bold transition cursor-not-allowed";
@@ -1137,6 +1187,12 @@
                 isBotRunning = false;
                 isResuming = false;
                 clearInterval(priceInterval);
+                clearInterval(uptimeInterval);
+                if (botStartTime) {
+                    totalUptimeMs += (Date.now() - botStartTime);
+                    botStartTime = null;
+                }
+                updateUptimeDisplay();
             }
             const scrollBox = document.getElementById('tab-activity');
             scrollBox.scrollTop = scrollBox.scrollHeight;
