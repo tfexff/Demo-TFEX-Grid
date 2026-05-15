@@ -13,6 +13,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
         body {
             font-family: 'Prompt', sans-serif;
@@ -813,13 +814,15 @@
         function addLog(action, price, contracts, pnl, time) {
             const logBox = document.getElementById('new-logs');
             let pnlText = pnl !== null ? ` | PnL: <span class="${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}">${pnl >= 0 ? '+' : ''}${pnl.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>` : '';
-            let colorClass = action.includes('BUY') ? 'text-cyan-300' : (action.includes('SELL') ? 'text-pink-300' : 'text-amber-400 font-bold');
+            
+            // อัปเดตให้รองรับทั้งตัวพิมพ์เล็กและใหญ่เพื่อให้แสดงสีถูกต้อง
+            let colorClass = action.toUpperCase().includes('BUY') ? 'text-cyan-300' : (action.toUpperCase().includes('SELL') ? 'text-pink-300' : 'text-amber-400 font-bold');
             
             let msg = `<div class="${colorClass}">[${time}] ${action.padEnd(12)} | ${contracts} Con. | @${price.toFixed(1)}${pnlText}</div>`;
             
             logBox.insertAdjacentHTML('beforeend', msg);
             
-            while (logBox.children.length > 100) {
+            while (logBox.children.length > 500) {
                 logBox.removeChild(logBox.firstChild);
             }
             
@@ -898,7 +901,7 @@
                         realizedPNL -= comm;
                         totalComm += comm;
                         
-                        addLog(`BUY (BATCH G:${pArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
+                        addLog(`Match Buy (Target: ${pArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
                         batchedCount++;
                     }
                 } else {
@@ -911,12 +914,19 @@
                         realizedPNL -= comm;
                         totalComm += comm;
                         
-                        addLog(`SELL (BATCH G:${pArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
+                        addLog(`Match Sell (Target: ${pArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
                         batchedCount++;
                     }
                 }
             }
             if (batchedCount > 0) {
+                // เพิ่มบรรทัดแสดงผล Data Feed Price ปิดท้ายไม้ที่รวบ
+                const logBox = document.getElementById('new-logs');
+                logBox.insertAdjacentHTML('beforeend', `<div class="text-gray-400 mt-1 mb-2">[${timeStr}] Data Feed Price : ${execPrice.toFixed(1)}</div>`);
+                
+                const scrollBox = document.getElementById('tab-activity');
+                scrollBox.scrollTop = scrollBox.scrollHeight;
+
                 calculateAndUpdateAll();
             }
         }
@@ -1057,18 +1067,44 @@
                     
                     if (activationTarget !== null && !isNaN(activationTarget)) {
                         isWaitingActivation = true;
-                        activationDirection = Math.sign(activationTarget - currentPrice);
-                        if (activationDirection === 0) { isWaitingActivation = false; }
+                        
+                        // ปรับแก้ลอจิกการเริ่มทำงานครั้งแรก
+                        if (currentDirection === 'LONG' && activationTarget > currentPrice) {
+                            isWaitingActivation = false; // ทะลุเป้าหมายไปแล้ว ให้เริ่มทันที
+                        } else if (currentDirection === 'SHORT' && activationTarget < currentPrice) {
+                            isWaitingActivation = false; // ทะลุเป้าหมายไปแล้ว ให้เริ่มทันที
+                        } else if (activationTarget === currentPrice) {
+                            isWaitingActivation = false;
+                        } else {
+                            // เข้าโหมดรอ (LONG รอราคาย่อลงมา, SHORT รอราคาเด้งขึ้นไป)
+                            activationDirection = Math.sign(activationTarget - currentPrice);
+                        }
                         
                         if (isWaitingActivation) {
                             logContainer.innerHTML += `<div class="text-yellow-400 mt-2">[${timeStr}] BOT STANDBY. Waiting for price to cross @${activationTarget.toFixed(1)}</div>`;
                         } else {
                             logContainer.innerHTML += `<div class="text-green-400 mt-2">[${timeStr}] BOT STARTED in ${currentDirection} MODE. Grids initialized.</div>`;
+                            
+                            // แสดง Pending Orders ทั้งหมดที่รออยู่
+                            let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+                            for (let i = numGrids - 1; i >= 0; i--) {
+                                let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
+                                addLog(action, pArr[i], contracts, null, timeStr);
+                            }
+
                             if (isBatchFill) executeBatchFill(currentPrice, timeStr);
                         }
                     } else {
                         isWaitingActivation = false;
                         logContainer.innerHTML += `<div class="text-green-400 mt-2">[${timeStr}] BOT STARTED in ${currentDirection} MODE. Grids initialized.</div>`;
+                        
+                        // แสดง Pending Orders ทั้งหมดที่รออยู่
+                        let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+                        for (let i = numGrids - 1; i >= 0; i--) {
+                            let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
+                            addLog(action, pArr[i], contracts, null, timeStr);
+                        }
+
                         if (isBatchFill) executeBatchFill(currentPrice, timeStr);
                     }
                 }
@@ -1141,6 +1177,13 @@
                     const logBox = document.getElementById('new-logs');
                     logBox.insertAdjacentHTML('beforeend', `<div class="text-yellow-300">[${timeStr}] SYSTEM ACTIVATED @${newPrice.toFixed(1)}. Grids are now active.</div>`);
                     
+                    // แสดง Pending Orders ทันทีเมื่อระบบ Activate เข้าเงื่อนไข
+                    let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+                    for (let i = numGrids - 1; i >= 0; i--) {
+                        let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
+                        addLog(action, pArr[i], contracts, null, timeStr);
+                    }
+
                     let isBatchFill = document.getElementById('inp-adv-batch').checked;
                     if (isBatchFill) executeBatchFill(newPrice, timeStr);
                 } else {
@@ -1214,6 +1257,19 @@
 
             currentPrice = newPrice;
             calculateAndUpdateAll();
+
+            // แสดงราคา Data Feed ทุกครั้งที่มีการเปลี่ยนแปลงราคา (Tick)
+            if (newPrice !== startP) {
+                const logBox = document.getElementById('new-logs');
+                logBox.insertAdjacentHTML('beforeend', `<div class="text-gray-400 mt-1 mb-2">[${timeStr}] Data Feed Price : ${newPrice.toFixed(1)}</div>`);
+                
+                while (logBox.children.length > 500) {
+                    logBox.removeChild(logBox.firstChild);
+                }
+                
+                const scrollBox = document.getElementById('tab-activity');
+                scrollBox.scrollTop = scrollBox.scrollHeight;
+            }
 
             if (targetRealized !== null && !isNaN(targetRealized) && realizedPNL >= targetRealized) {
                 forceStopBot(`REALIZED TARGET REACHED (+${realizedPNL.toFixed(2)})`);
