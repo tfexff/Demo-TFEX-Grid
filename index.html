@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- บังคับไม่ให้เก็บ Cache เพื่อให้ได้ข้อมูลล่าสุดเสมอ -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -13,25 +12,21 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <style>
         body {
             font-family: 'Prompt', sans-serif;
             background-color: #f3f4f6;
-            /* ป้องกันการคลุมดำข้อความ (Anti-Select) */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
         }
-        /* อนุญาตให้พิมพ์และคลุมดำในช่องกรอกข้อมูล (Input) ได้ตามปกติ */
         input, select, textarea {
             -webkit-user-select: auto;
             -moz-user-select: auto;
             -ms-user-select: auto;
             user-select: auto;
         }
-        /* Custom Scrollbar for Desktop */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
@@ -45,7 +40,7 @@
 </head>
 <body class="text-gray-800 min-h-screen flex flex-col lg:h-screen lg:overflow-hidden" oncontextmenu="return false;" onselectstart="return false;" ondragstart="return false;">
 
-    <!-- Custom Modal (Popup) -->
+    <!-- Custom Alert Modal (Popup) -->
     <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl p-6 w-[90%] max-w-md transform scale-95 transition-transform duration-300 relative border border-gray-100">
             <div class="absolute top-4 right-4 cursor-pointer text-gray-400 hover:text-gray-600 transition" onclick="closeModal()">
@@ -53,9 +48,8 @@
             </div>
             <div class="flex items-start gap-4">
                 <div id="modal-icon" class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl">
-                    <!-- Icon -->
                 </div>
-                <div>
+                <div class="flex-1">
                     <h3 id="modal-title" class="text-lg font-bold text-gray-900 mb-1">Title</h3>
                     <p id="modal-message" class="text-sm text-gray-600 leading-relaxed">Message</p>
                     <div class="mt-6 flex justify-end">
@@ -66,22 +60,50 @@
         </div>
     </div>
 
+    <!-- Load Options Modal -->
+    <div id="load-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-[90%] max-w-sm transform scale-95 transition-transform duration-300 relative border border-gray-100">
+            <div class="absolute top-4 right-4 cursor-pointer text-gray-400 hover:text-gray-600 transition" onclick="closeLoadModal()">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center"><i class="fa-solid fa-cloud-arrow-down text-blue-500 mr-2"></i> โหลดข้อมูลระบบ</h3>
+            
+            <div id="cache-save-info" class="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-xl hidden">
+                <div class="text-sm font-bold text-blue-800 mb-1 flex items-center"><i class="fa-solid fa-floppy-disk mr-2"></i>พบข้อมูล Auto-Save ล่าสุด</div>
+                <div class="text-xs text-blue-600 mb-3 bg-white p-2 rounded border border-blue-100">
+                    <div>Symbol: <span id="cache-symbol-name" class="font-bold"></span></div>
+                    <div>เวลาเซฟ: <span id="cache-time" class="font-mono"></span></div>
+                </div>
+                <button onclick="loadFromCache()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors shadow-md flex justify-center items-center">
+                    <i class="fa-solid fa-clock-rotate-left mr-2"></i> กู้คืนจาก Auto-Save
+                </button>
+            </div>
+            
+            <div class="relative flex items-center py-2" id="load-divider">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="flex-shrink-0 mx-4 text-gray-400 text-xs">หรือ</span>
+                <div class="flex-grow border-t border-gray-200"></div>
+            </div>
+            
+            <button onclick="document.getElementById('file-loader').click(); closeLoadModal();" class="mt-2 w-full py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-bold rounded-lg transition-colors border border-gray-300 flex justify-center items-center">
+                <i class="fa-solid fa-file-import mr-2"></i> อัปโหลดจากไฟล์ (.txt)
+            </button>
+        </div>
+    </div>
+
     <!-- Navbar -->
     <nav class="bg-slate-900 text-white shadow-lg z-20 shrink-0 sticky top-0">
         <div class="px-4 lg:px-6 flex justify-between items-center h-16">
-            <!-- Logo & Tabs -->
             <div class="flex items-center gap-2 lg:gap-6">
                 <div class="text-lg lg:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300 whitespace-nowrap">
                     <i class="fa-solid fa-layer-group mr-1 lg:mr-2 text-blue-400"></i><span class="hidden sm:inline">TFF Grid Trading</span><span class="sm:hidden">TFF Grid</span>
                 </div>
-                <!-- Tabs (Hidden on mobile) -->
                 <div class="hidden md:flex space-x-1 bg-slate-800 p-1 rounded-lg">
                     <button id="nav-tab-symbol" class="px-4 py-1.5 bg-blue-600 rounded-md text-sm font-medium shadow">S50M26_LONG</button>
                     <button class="px-4 py-1.5 hover:bg-slate-700 rounded-md text-sm font-medium text-gray-300 transition">+ เปิดคู่ใหม่</button>
                 </div>
             </div>
             
-            <!-- Right Menu -->
             <div class="flex items-center gap-2 lg:gap-4">
                 <div class="flex items-center bg-slate-800 rounded-lg px-2 py-1 lg:px-3 border border-slate-700">
                     <span class="hidden lg:inline text-xs text-gray-400 mr-2">ENV:</span>
@@ -90,7 +112,6 @@
                         <option>Production</option>
                     </select>
                 </div>
-                <!-- ส่วนแสดง วันที่ เวลา และ Online -->
                 <div class="hidden sm:flex items-center gap-3">
                     <div id="uptime-container" class="hidden text-xs font-mono font-medium bg-slate-800 text-cyan-400 px-2 py-1 rounded border border-slate-700 items-center gap-1.5">
                         <i class="fa-solid fa-stopwatch"></i> <span id="uptime-text">00:00:00</span>
@@ -114,7 +135,6 @@
         <!-- Left Panel: Strategy Settings -->
         <div class="w-full lg:w-[340px] xl:w-[380px] flex-shrink-0 flex flex-col gap-4 lg:overflow-y-auto lg:pr-2 lg:pb-2">
             
-            <!-- Bot Control Box -->
             <div class="glass-panel p-4 lg:p-5 rounded-xl shadow-sm border border-gray-200 flex-shrink-0">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold text-gray-800"><i class="fa-solid fa-robot mr-2 text-blue-500"></i>ควบคุมบอท</h2>
@@ -130,7 +150,6 @@
                 </div>
             </div>
 
-            <!-- Trade Direction & Symbol -->
             <div class="glass-panel p-4 lg:p-5 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden flex-shrink-0">
                 <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
                 <div class="space-y-4 ml-2">
@@ -152,18 +171,16 @@
                 </div>
             </div>
 
-            <!-- Settings Form -->
             <div class="glass-panel p-4 lg:p-5 rounded-xl shadow-sm border border-gray-200 flex-shrink-0">
                 <div class="flex justify-between items-end mb-4 border-b border-gray-100 pb-3">
                     <h2 class="text-md lg:text-lg font-semibold text-gray-800">ตั้งค่ากลยุทธ์ Grid</h2>
                     <div class="space-x-2">
-                        <button class="text-blue-600 text-xs lg:text-sm hover:underline disabled:opacity-50" id="btn-load" onclick="triggerLoadFile()"><i class="fa-solid fa-download mr-1"></i>โหลด</button>
+                        <button class="text-blue-600 text-xs lg:text-sm hover:underline disabled:opacity-50" id="btn-load" onclick="openLoadModal()"><i class="fa-solid fa-download mr-1"></i>โหลด</button>
                         <button class="text-blue-600 text-xs lg:text-sm hover:underline disabled:opacity-50" id="btn-save" onclick="exportSaveFile()"><i class="fa-solid fa-upload mr-1"></i>บันทึก</button>
                     </div>
                 </div>
 
                 <div class="space-y-5">
-                    <!-- Core Settings -->
                     <div class="bg-blue-50 p-3 lg:p-4 rounded-lg border border-blue-100 space-y-3">
                         <div class="flex items-center justify-between">
                             <label class="text-xs lg:text-sm font-medium text-gray-700">กรอบบน (Upper)</label>
@@ -183,7 +200,6 @@
                         </div>
                     </div>
 
-                    <!-- Risk Settings -->
                     <div class="pt-2 border-t border-gray-100 space-y-3">
                         <div class="text-sm font-medium text-gray-600 mb-3 flex items-center">
                             <i class="fa-solid fa-shield mr-2"></i>ตั้งค่าความเสี่ยง
@@ -206,12 +222,10 @@
                         </div>
                     </div>
 
-                    <!-- Advanced Settings -->
                     <div class="pt-2 border-t border-gray-100">
                         <div class="text-sm font-medium text-gray-600 mb-3 flex items-center">
                             <i class="fa-solid fa-sliders mr-2"></i>ตั้งค่าขั้นสูง
                         </div>
-                        
                         <div class="space-y-3 bg-gray-50 p-3 rounded-lg text-xs lg:text-sm border border-gray-100">
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-700">รวบไม้ตอนเปิด (ครั้งแรก)</span>
@@ -236,7 +250,6 @@
         <!-- Right Panel: Dashboard & Logs -->
         <div class="w-full lg:flex-1 flex flex-col gap-4 lg:overflow-hidden min-h-0">
             
-            <!-- KPI Cards -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 flex-shrink-0">
                 <div class="glass-panel p-3 lg:p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 relative overflow-hidden">
                     <div class="text-[10px] lg:text-xs text-gray-500 mb-1">ราคาปัจจุบัน (S50M26)</div>
@@ -245,7 +258,6 @@
                         <i id="price-trend" class="fa-solid fa-caret-up text-green-500 text-md lg:text-lg ml-2"></i>
                     </div>
                 </div>
-                <!-- Realized P/L -->
                 <div class="glass-panel p-3 lg:p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-green-500 relative overflow-hidden">
                     <div class="absolute top-2 right-3 opacity-10 text-gray-800"><i class="fa-solid fa-arrow-trend-up text-4xl"></i></div>
                     <div class="text-[10px] lg:text-xs text-gray-500 mb-1">กำไรรับรู้แล้ว (Realized P/L)</div>
@@ -257,7 +269,6 @@
                     <div id="kpi-hold" class="text-lg lg:text-2xl font-bold text-gray-800">0 <span class="text-[10px] lg:text-sm font-normal text-gray-500">สัญญา</span></div>
                     <div id="kpi-avg" class="text-[10px] lg:text-xs text-gray-400 mt-1">ทุนเฉลี่ย: 0.0</div>
                 </div>
-                <!-- Unrealized -->
                 <div class="glass-panel p-3 lg:p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-purple-500 relative">
                     <div class="text-[10px] lg:text-xs text-gray-500 mb-1">Unrealized</div>
                     <div id="kpi-unrealized" class="text-lg lg:text-2xl font-bold text-gray-800">฿0.00</div>
@@ -265,37 +276,29 @@
                 </div>
             </div>
 
-            <!-- Visual Grid Monitor -->
             <div class="glass-panel p-4 lg:p-6 rounded-xl shadow-sm border border-gray-200 overflow-x-auto flex-shrink-0">
                 <h2 class="text-md lg:text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <i class="fa-solid fa-chart-line mr-2 text-indigo-500"></i>สถานะราคาในกรอบ Grid
                 </h2>
-                
                 <div class="relative w-[300px] sm:w-full h-16 mt-6 mx-auto sm:mx-0">
-                    <!-- Background Bar -->
                     <div class="absolute top-1/2 left-0 w-full h-2 lg:h-3 bg-gray-200 rounded-full transform -translate-y-1/2"></div>
-                    <!-- Active Grid Zone -->
                     <div class="absolute top-1/2 left-[10%] w-[80%] h-2 lg:h-3 bg-gradient-to-r from-blue-200 via-green-200 to-blue-200 rounded-full transform -translate-y-1/2 border-y border-gray-300"></div>
                     
-                    <!-- Lower Bound Marker -->
                     <div class="absolute top-1/2 left-[10%] w-0.5 h-6 lg:h-8 bg-blue-600 transform -translate-y-1/2">
                         <div id="vis-lower" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-blue-600">990.0</div>
                         <div class="absolute -top-5 lg:-top-6 -left-4 lg:-left-6 text-[10px] lg:text-xs text-gray-500 whitespace-nowrap">กรอบล่าง</div>
                     </div>
                     
-                    <!-- Upper Bound Marker -->
                     <div class="absolute top-1/2 right-[10%] w-0.5 h-6 lg:h-8 bg-blue-600 transform -translate-y-1/2">
                         <div id="vis-upper" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-blue-600">1000.0</div>
                         <div class="absolute -top-5 lg:-top-6 -left-3 lg:-left-4 text-[10px] lg:text-xs text-gray-500 whitespace-nowrap">กรอบบน</div>
                     </div>
 
-                    <!-- Stop Loss Marker -->
                     <div id="marker-sl" class="absolute top-1/2 left-[2%] w-0.5 h-4 lg:h-6 bg-red-500 transform -translate-y-1/2 transition-all duration-300 z-0">
                         <div id="vis-sl-text" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-red-500">780.0</div>
                         <div class="absolute -top-5 lg:-top-6 -left-2 text-[10px] lg:text-xs text-red-500 whitespace-nowrap">SL</div>
                     </div>
 
-                    <!-- Current Price Indicator (Animated) -->
                     <div id="price-indicator" class="absolute top-1/2 left-[50%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-500 ease-in-out z-10">
                         <div class="bg-gray-800 text-white text-[10px] lg:text-xs font-bold py-0.5 px-1.5 lg:py-1 lg:px-2 rounded mb-1 shadow-lg flex items-center gap-1">
                             <span id="indicator-price">995.0</span>
@@ -305,9 +308,7 @@
                 </div>
             </div>
 
-            <!-- Logs & Orders -->
             <div class="glass-panel rounded-xl shadow-sm border border-gray-200 flex flex-col h-[350px] lg:h-auto lg:flex-1 min-h-0 overflow-hidden shrink-0 lg:shrink">
-                <!-- Tab Headers -->
                 <div class="flex overflow-x-auto border-b border-gray-200 bg-gray-50 rounded-t-xl whitespace-nowrap flex-shrink-0">
                     <button id="tab-btn-activity" onclick="switchTab('activity')" class="px-4 lg:px-6 py-2 lg:py-3 text-[11px] lg:text-sm font-semibold text-blue-600 border-b-2 border-blue-600 bg-white">
                         <i class="fa-solid fa-list-ul mr-1 lg:mr-2"></i>Activity Logs
@@ -320,10 +321,7 @@
                     </button>
                 </div>
                 
-                <!-- Terminal Content Wrapped in Absolute Position -->
                 <div class="relative flex-1 bg-slate-900 min-h-0">
-                    
-                    <!-- TAB: Activity Logs -->
                     <div id="tab-activity" class="absolute inset-0 p-3 lg:p-4 overflow-y-auto font-mono text-[11px] lg:text-[13px] text-gray-300 leading-relaxed block">
                         <div class="text-green-400" id="log-initial-msg">[System] Initialized. Waiting for bot start...</div>
                         <div class="opacity-50" id="log-initial-divider">---------------------------------------------------</div>
@@ -331,7 +329,6 @@
                         <div id="typing-cursor" class="inline-block w-1.5 h-3 lg:w-2 lg:h-4 bg-green-500 animate-pulse mt-1"></div>
                     </div>
 
-                    <!-- TAB: Open Orders -->
                     <div id="tab-open" class="absolute inset-0 p-0 overflow-y-auto font-mono text-[11px] lg:text-[13px] text-gray-300 hidden">
                         <table class="w-full text-left border-collapse">
                             <thead class="text-gray-400 bg-slate-800 sticky top-0 shadow-md">
@@ -348,7 +345,6 @@
                         </table>
                     </div>
 
-                    <!-- TAB: Order History -->
                     <div id="tab-history" class="absolute inset-0 p-0 overflow-y-auto font-mono text-[11px] lg:text-[13px] text-gray-300 hidden">
                         <table class="w-full text-left border-collapse">
                             <thead class="text-gray-400 bg-slate-800 sticky top-0 shadow-md">
@@ -365,10 +361,8 @@
                             </tbody>
                         </table>
                     </div>
-
                 </div>
             </div>
-
         </div>
     </main>
     
@@ -404,7 +398,6 @@
         let sumEntry = 0;
         let matchedCycles = 0;
         
-        // High-Water Mark Absolute Drawdown Variables
         let currentUnrealizedPNL = 0;
         let maxTotalPnL = 0;
         let currentDrawdownTHB = 0;
@@ -420,12 +413,13 @@
 
         let closedTradesHistory = [];
         
-        // Uptime Tracking
+        // Uptime Tracking & Auto Save
         let botStartTime = null;
         let totalUptimeMs = 0;
         let uptimeInterval = null;
+        let autoSaveInterval = null;
 
-        // --- Custom Modal / Message Box ---
+        // --- Custom Alert Modal ---
         function showModal(title, message, type = 'error') {
             const modal = document.getElementById('custom-modal');
             const modalTitle = document.getElementById('modal-title');
@@ -447,7 +441,6 @@
             }
 
             modal.classList.remove('hidden');
-            // Trigger reflow
             void modal.offsetWidth;
             modal.classList.remove('opacity-0');
             modal.querySelector('div').classList.remove('scale-95');
@@ -464,7 +457,54 @@
             }, 300);
         }
 
-        // --- Update Clock ---
+        // --- Load Options Modal ---
+        function openLoadModal() {
+            if (isBotRunning) {
+                showModal("แจ้งเตือน", "ไม่สามารถโหลดข้อมูลได้ในขณะที่บอทกำลังทำงาน", "warning");
+                return;
+            }
+
+            const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
+            const cacheDataStr = localStorage.getItem(`TFF_AutoSave_${symbol}`);
+            const cacheInfoBox = document.getElementById('cache-save-info');
+            const divider = document.getElementById('load-divider');
+
+            if (cacheDataStr) {
+                try {
+                    const cacheData = JSON.parse(cacheDataStr);
+                    const date = new Date(cacheData.timestamp);
+                    document.getElementById('cache-symbol-name').innerText = symbol;
+                    document.getElementById('cache-time').innerText = date.toLocaleString('en-GB');
+                    cacheInfoBox.classList.remove('hidden');
+                    divider.classList.remove('hidden');
+                } catch(e) {
+                    cacheInfoBox.classList.add('hidden');
+                    divider.classList.add('hidden');
+                }
+            } else {
+                cacheInfoBox.classList.add('hidden');
+                divider.classList.add('hidden');
+            }
+
+            const modal = document.getElementById('load-modal');
+            modal.classList.remove('hidden');
+            void modal.offsetWidth; 
+            modal.classList.remove('opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+            modal.querySelector('div').classList.add('scale-100');
+        }
+
+        function closeLoadModal() {
+            const modal = document.getElementById('load-modal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // --- Update Clock & Uptime ---
         function updateClock() {
             const now = new Date();
             const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
@@ -525,7 +565,6 @@
             priceIndicator.style.left = `${percPrice}%`;
         }
 
-        // ฟังก์ชันอัปเดตชื่อแท็บด้านบน
         function updateNavTab() {
             const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
             document.getElementById('nav-tab-symbol').innerText = `${symbol}_${currentDirection}`;
@@ -534,7 +573,7 @@
         document.getElementById('inp-upper').addEventListener('input', updateVisualGrid);
         document.getElementById('inp-lower').addEventListener('input', updateVisualGrid);
         document.getElementById('inp-risk-sl').addEventListener('input', updateVisualGrid);
-        document.getElementById('inp-symbol').addEventListener('input', updateNavTab); // อัปเดตแท็บเมื่อพิมพ์
+        document.getElementById('inp-symbol').addEventListener('input', updateNavTab); 
         
         window.addEventListener('DOMContentLoaded', () => {
             updateVisualGrid();
@@ -554,7 +593,7 @@
                 btnShort.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-[#ef4444] text-white shadow-sm border border-[#b91c1c]";
                 btnLong.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100";
             }
-            updateNavTab(); // อัปเดตแท็บเมื่อสลับทิศทาง
+            updateNavTab(); 
         }
 
         function setDirection(dir) {
@@ -612,16 +651,10 @@
             }
         }
 
-        // --- Save / Load Feature ---
-        function exportSaveFile() {
-            if (isBotRunning) {
-                showModal("แจ้งเตือน", "โปรดกด <b>STOP</b> บอทก่อนทำการบันทึกข้อมูลครับ", "warning");
-                return;
-            }
-
+        // --- System Data Extractor ---
+        function getSystemStateObj() {
             const currentUptimeToSave = totalUptimeMs + (isBotRunning && botStartTime ? Date.now() - botStartTime : 0);
-
-            const saveData = {
+            return {
                 version: '1.4',
                 timestamp: new Date().toISOString(),
                 state: {
@@ -653,7 +686,16 @@
                 },
                 logs: document.getElementById('new-logs').innerHTML
             };
+        }
 
+        // --- Save / Load Feature ---
+        function exportSaveFile() {
+            if (isBotRunning) {
+                showModal("แจ้งเตือน", "โปรดกด <b>STOP</b> บอทก่อนทำการบันทึกข้อมูลแบบ Manual ครับ", "warning");
+                return;
+            }
+
+            const saveData = getSystemStateObj();
             const dataStr = JSON.stringify(saveData, null, 2);
             const blob = new Blob([dataStr], { type: "text/plain" });
             const url = URL.createObjectURL(blob);
@@ -675,12 +717,110 @@
             URL.revokeObjectURL(url);
         }
 
-        function triggerLoadFile() {
-            if(isBotRunning) {
-                showModal("แจ้งเตือน", "ไม่สามารถโหลดข้อมูลได้ในขณะที่บอทกำลังทำงาน", "warning");
-                return;
+        function executeAutoSave() {
+            if (!isBotRunning) return;
+            
+            const saveData = getSystemStateObj();
+            const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
+            
+            // แบ็คอัปเงียบๆ ลง LocalStorage ตามชื่อ Symbol (ไม่มีการให้ดาวน์โหลดไฟล์)
+            localStorage.setItem(`TFF_AutoSave_${symbol}`, JSON.stringify(saveData));
+
+            const timeStr = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            const logBox = document.getElementById('new-logs');
+            logBox.insertAdjacentHTML('beforeend', `<div class="text-blue-400 mt-1 mb-2">[${timeStr}] 💾 Auto-Saved to Browser Cache (${symbol})</div>`);
+            
+            while (logBox.children.length > 500) {
+                logBox.removeChild(logBox.firstChild);
             }
-            document.getElementById('file-loader').click();
+            
+            const scrollBox = document.getElementById('tab-activity');
+            scrollBox.scrollTop = scrollBox.scrollHeight;
+        }
+
+        function applySaveData(saveData) {
+            document.getElementById('inp-symbol').value = saveData.inputs.symbol || '';
+            document.getElementById('inp-upper').value = saveData.inputs.upper || '';
+            document.getElementById('inp-lower').value = saveData.inputs.lower || '';
+            document.getElementById('inp-spacing').value = saveData.inputs.spacing || '';
+            document.getElementById('inp-contracts').value = saveData.inputs.contracts || '';
+            document.getElementById('inp-risk-activation').value = saveData.inputs.riskActivation || '';
+            document.getElementById('inp-risk-sl').value = saveData.inputs.riskSl || '';
+            document.getElementById('inp-risk-tp-realized').value = saveData.inputs.riskTpRealized || '';
+            document.getElementById('inp-risk-tp-unrealized').value = saveData.inputs.riskTpUnrealized || '';
+            document.getElementById('inp-adv-batch').checked = saveData.inputs.advBatch || false;
+            document.getElementById('inp-adv-lpr').checked = saveData.inputs.advLpr || false;
+
+            numGrids = saveData.state.numGrids || 0;
+            gridSpacing = saveData.state.gridSpacing || 0;
+            lowerLimit = saveData.state.lowerLimit || 0;
+            upperLimit = saveData.state.upperLimit || 0;
+            currentPrice = saveData.state.currentPrice || 0;
+            currentDirection = saveData.state.currentDirection || 'LONG';
+            realizedPNL = saveData.state.realizedPNL || 0;
+            totalComm = saveData.state.totalComm || 0;
+            activeCount = saveData.state.activeCount || 0;
+            sumEntry = saveData.state.sumEntry || 0;
+            
+            maxTotalPnL = saveData.state.maxTotalPnL || 0;
+            currentDrawdownTHB = saveData.state.currentDrawdownTHB || 0;
+            maxDrawdownTHB = saveData.state.maxDrawdownTHB || 0;
+            currentUnrealizedPNL = saveData.state.currentUnrealizedPNL || 0;
+
+            matchedCycles = saveData.state.matchedCycles || 0;
+            closedTradesHistory = saveData.state.closedTradesHistory || [];
+            
+            isWaitingActivation = saveData.state.isWaitingActivation || false;
+            activationTarget = saveData.state.activationTarget || null;
+            activationDirection = saveData.state.activationDirection || 0;
+            stopLossTarget = saveData.state.stopLossTarget || null;
+            targetRealized = saveData.state.targetRealized || null;
+            targetUnrealized = saveData.state.targetUnrealized || null;
+            totalUptimeMs = saveData.state.totalUptimeMs || 0;
+            botStartTime = null;
+
+            pArr = new Float64Array(saveData.state.pArr || []);
+            tArr = new Float64Array(saveData.state.tArr || []);
+            activeArr = new Uint8Array(saveData.state.activeArr || []);
+            entryArr = new Float64Array(saveData.state.entryArr || []);
+
+            document.getElementById('new-logs').innerHTML = saveData.logs || '';
+            
+            if (totalUptimeMs > 0) {
+                document.getElementById('uptime-container').classList.remove('hidden');
+                document.getElementById('uptime-container').classList.add('flex');
+            }
+            updateUptimeDisplay();
+            
+            setDirectionUI(currentDirection); 
+            updateVisualGrid();
+            calculateAndUpdateAll();
+            
+            const btnStart = document.getElementById('btn-start');
+            btnStart.innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> RE-START';
+            btnStart.className = "flex-1 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white py-3 rounded-lg font-bold shadow-lg shadow-yellow-200 transition transform hover:-translate-y-0.5";
+            
+            isResuming = true;
+            
+            const logContainer = document.getElementById('new-logs');
+            logContainer.insertAdjacentHTML('beforeend', `<div class="text-blue-400 mt-2">[${new Date().toLocaleTimeString('en-GB', { hour12: false })}] 📥 SYSTEM STATE RESTORED SUCCESSFULLY.</div>`);
+            const scrollBox = document.getElementById('tab-activity');
+            scrollBox.scrollTop = scrollBox.scrollHeight;
+        }
+
+        function loadFromCache() {
+            const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
+            const cacheDataStr = localStorage.getItem(`TFF_AutoSave_${symbol}`);
+            if (cacheDataStr) {
+                try {
+                    const saveData = JSON.parse(cacheDataStr);
+                    applySaveData(saveData);
+                    closeLoadModal();
+                } catch (err) {
+                    console.error(err);
+                    showModal("ข้อผิดพลาด", "ข้อมูล Cache เสียหาย ไม่สามารถกู้คืนได้", "error");
+                }
+            }
         }
 
         function handleFileLoad(event) {
@@ -691,75 +831,7 @@
             reader.onload = function(e) {
                 try {
                     const saveData = JSON.parse(e.target.result);
-                    
-                    document.getElementById('inp-symbol').value = saveData.inputs.symbol || '';
-                    document.getElementById('inp-upper').value = saveData.inputs.upper || '';
-                    document.getElementById('inp-lower').value = saveData.inputs.lower || '';
-                    document.getElementById('inp-spacing').value = saveData.inputs.spacing || '';
-                    document.getElementById('inp-contracts').value = saveData.inputs.contracts || '';
-                    document.getElementById('inp-risk-activation').value = saveData.inputs.riskActivation || '';
-                    document.getElementById('inp-risk-sl').value = saveData.inputs.riskSl || '';
-                    document.getElementById('inp-risk-tp-realized').value = saveData.inputs.riskTpRealized || '';
-                    document.getElementById('inp-risk-tp-unrealized').value = saveData.inputs.riskTpUnrealized || '';
-                    document.getElementById('inp-adv-batch').checked = saveData.inputs.advBatch || false;
-                    document.getElementById('inp-adv-lpr').checked = saveData.inputs.advLpr || false;
-
-                    numGrids = saveData.state.numGrids || 0;
-                    gridSpacing = saveData.state.gridSpacing || 0;
-                    lowerLimit = saveData.state.lowerLimit || 0;
-                    upperLimit = saveData.state.upperLimit || 0;
-                    currentPrice = saveData.state.currentPrice || 0;
-                    currentDirection = saveData.state.currentDirection || 'LONG';
-                    realizedPNL = saveData.state.realizedPNL || 0;
-                    totalComm = saveData.state.totalComm || 0;
-                    activeCount = saveData.state.activeCount || 0;
-                    sumEntry = saveData.state.sumEntry || 0;
-                    
-                    maxTotalPnL = saveData.state.maxTotalPnL || 0;
-                    currentDrawdownTHB = saveData.state.currentDrawdownTHB || 0;
-                    maxDrawdownTHB = saveData.state.maxDrawdownTHB || 0;
-                    currentUnrealizedPNL = saveData.state.currentUnrealizedPNL || 0;
-
-                    matchedCycles = saveData.state.matchedCycles || 0;
-                    closedTradesHistory = saveData.state.closedTradesHistory || [];
-                    
-                    isWaitingActivation = saveData.state.isWaitingActivation || false;
-                    activationTarget = saveData.state.activationTarget || null;
-                    activationDirection = saveData.state.activationDirection || 0;
-                    stopLossTarget = saveData.state.stopLossTarget || null;
-                    targetRealized = saveData.state.targetRealized || null;
-                    targetUnrealized = saveData.state.targetUnrealized || null;
-                    totalUptimeMs = saveData.state.totalUptimeMs || 0;
-                    botStartTime = null;
-
-                    pArr = new Float64Array(saveData.state.pArr || []);
-                    tArr = new Float64Array(saveData.state.tArr || []);
-                    activeArr = new Uint8Array(saveData.state.activeArr || []);
-                    entryArr = new Float64Array(saveData.state.entryArr || []);
-
-                    document.getElementById('new-logs').innerHTML = saveData.logs || '';
-                    
-                    if (totalUptimeMs > 0) {
-                        document.getElementById('uptime-container').classList.remove('hidden');
-                        document.getElementById('uptime-container').classList.add('flex');
-                    }
-                    updateUptimeDisplay();
-
-                    setDirectionUI(currentDirection); 
-                    updateVisualGrid();
-                    calculateAndUpdateAll();
-                    
-                    const btnStart = document.getElementById('btn-start');
-                    btnStart.innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> RE-START';
-                    btnStart.className = "flex-1 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white py-3 rounded-lg font-bold shadow-lg shadow-yellow-200 transition transform hover:-translate-y-0.5";
-                    
-                    isResuming = true;
-                    
-                    const logContainer = document.getElementById('new-logs');
-                    logContainer.insertAdjacentHTML('beforeend', `<div class="text-blue-400 mt-2">[${new Date().toLocaleTimeString('en-GB', { hour12: false })}] 📥 SYSTEM STATE RESTORED FROM SAVE FILE.</div>`);
-                    const scrollBox = document.getElementById('tab-activity');
-                    scrollBox.scrollTop = scrollBox.scrollHeight;
-
+                    applySaveData(saveData);
                 } catch(err) {
                     console.error(err);
                     showModal("ข้อผิดพลาด", "เกิดข้อผิดพลาดในการโหลดไฟล์ ตรวจสอบความถูกต้องของไฟล์ Save อีกครั้ง", "error");
@@ -851,7 +923,6 @@
             const logBox = document.getElementById('new-logs');
             let pnlText = pnl !== null ? ` | PnL: <span class="${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}">${pnl >= 0 ? '+' : ''}${pnl.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>` : '';
             
-            // อัปเดตให้รองรับทั้งตัวพิมพ์เล็กและใหญ่เพื่อให้แสดงสีถูกต้อง
             let colorClass = action.toUpperCase().includes('BUY') ? 'text-cyan-300' : (action.toUpperCase().includes('SELL') ? 'text-pink-300' : 'text-amber-400 font-bold');
             
             let msg = `<div class="${colorClass}">[${time}] ${action.padEnd(12)} | ${contracts} Con. | @${price.toFixed(1)}${pnlText}</div>`;
@@ -956,7 +1027,6 @@
                 }
             }
             if (batchedCount > 0) {
-                // เพิ่มบรรทัดแสดงผล Data Feed Price ปิดท้ายไม้ที่รวบ
                 const logBox = document.getElementById('new-logs');
                 logBox.insertAdjacentHTML('beforeend', `<div class="text-gray-400 mt-1 mb-2">[${timeStr}] Data Feed Price : ${execPrice.toFixed(1)}</div>`);
                 
@@ -977,6 +1047,7 @@
             isBotRunning = false;
             clearInterval(priceInterval);
             clearInterval(uptimeInterval);
+            clearInterval(autoSaveInterval);
             
             if (botStartTime) {
                 totalUptimeMs += (Date.now() - botStartTime);
@@ -991,7 +1062,7 @@
             btnStop.classList.replace('bg-red-500', 'bg-gray-200');
             btnStop.classList.replace('text-white', 'text-gray-500');
             btnStop.classList.remove('hover:bg-red-600', 'shadow-lg', 'transform', 'hover:-translate-y-0.5');
-            btnStop.classList.add('cursor-not-allowed'); // สั่งให้ลูกศรห้ามกดกลับมา
+            btnStop.classList.add('cursor-not-allowed');
             btnStop.disabled = true;
 
             btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START';
@@ -1016,7 +1087,6 @@
 
             if (start) {
                 if (!isResuming) {
-                    // --- Input Validation (พร้อมแจ้งเตือนด้วย Modal สวยงาม) ---
                     const symbolStr = document.getElementById('inp-symbol').value.trim();
                     const upperVal = parseFloat(document.getElementById('inp-upper').value);
                     const lowerVal = parseFloat(document.getElementById('inp-lower').value);
@@ -1082,7 +1152,7 @@
                     
                     realizedPNL = 0; totalComm = 0; activeCount = 0; sumEntry = 0; matchedCycles = 0;
                     currentUnrealizedPNL = 0; maxTotalPnL = 0; currentDrawdownTHB = 0; maxDrawdownTHB = 0;
-                    totalUptimeMs = 0; // รีเซ็ตเวลาตอนเริ่มใหม่
+                    totalUptimeMs = 0; 
                     
                     logContainer.innerHTML = ''; 
                     closedTradesHistory = [];
@@ -1104,7 +1174,7 @@
                 btnStop.classList.replace('bg-gray-200', 'bg-red-500');
                 btnStop.classList.replace('text-gray-500', 'text-white');
                 btnStop.classList.add('hover:bg-red-600', 'shadow-lg', 'shadow-red-200', 'transform', 'hover:-translate-y-0.5');
-                btnStop.classList.remove('cursor-not-allowed'); // เอาเครื่องหมายห้ามกดออก เพื่อให้กดได้
+                btnStop.classList.remove('cursor-not-allowed');
                 btnStop.disabled = false;
 
                 statusBadge.textContent = "กำลังทำงาน";
@@ -1118,15 +1188,13 @@
                     if (activationTarget !== null && !isNaN(activationTarget)) {
                         isWaitingActivation = true;
                         
-                        // ปรับแก้ลอจิกการเริ่มทำงานครั้งแรก
                         if (currentDirection === 'LONG' && activationTarget > currentPrice) {
-                            isWaitingActivation = false; // ทะลุเป้าหมายไปแล้ว ให้เริ่มทันที
+                            isWaitingActivation = false; 
                         } else if (currentDirection === 'SHORT' && activationTarget < currentPrice) {
-                            isWaitingActivation = false; // ทะลุเป้าหมายไปแล้ว ให้เริ่มทันที
+                            isWaitingActivation = false; 
                         } else if (activationTarget === currentPrice) {
                             isWaitingActivation = false;
                         } else {
-                            // เข้าโหมดรอ (LONG รอราคาย่อลงมา, SHORT รอราคาเด้งขึ้นไป)
                             activationDirection = Math.sign(activationTarget - currentPrice);
                         }
                         
@@ -1135,7 +1203,6 @@
                         } else {
                             logContainer.innerHTML += `<div class="text-green-400 mt-2">[${timeStr}] BOT STARTED in ${currentDirection} MODE. Grids initialized.</div>`;
                             
-                            // แสดง Pending Orders ทั้งหมดที่รออยู่
                             let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
                             for (let i = numGrids - 1; i >= 0; i--) {
                                 let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
@@ -1148,7 +1215,6 @@
                         isWaitingActivation = false;
                         logContainer.innerHTML += `<div class="text-green-400 mt-2">[${timeStr}] BOT STARTED in ${currentDirection} MODE. Grids initialized.</div>`;
                         
-                        // แสดง Pending Orders ทั้งหมดที่รออยู่
                         let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
                         for (let i = numGrids - 1; i >= 0; i--) {
                             let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
@@ -1164,12 +1230,15 @@
 
                 isBotRunning = true;
                 priceInterval = setInterval(simulatePriceMovement, 2000);
+                
+                // บังคับ Auto-Save เสมอ ทุกๆ 1 นาที (60000ms) ขณะที่บอททำงาน
+                autoSaveInterval = setInterval(executeAutoSave, 60000);
 
             } else {
                 btnStop.classList.replace('bg-red-500', 'bg-gray-200');
                 btnStop.classList.replace('text-white', 'text-gray-500');
                 btnStop.classList.remove('hover:bg-red-600', 'shadow-lg', 'shadow-red-200', 'transform', 'hover:-translate-y-0.5');
-                btnStop.classList.add('cursor-not-allowed'); // ใส่สัญลักษณ์ห้ามกดกลับมาเมื่อหยุดแล้ว
+                btnStop.classList.add('cursor-not-allowed');
                 btnStop.disabled = true;
 
                 btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START';
@@ -1188,6 +1257,8 @@
                 isResuming = false;
                 clearInterval(priceInterval);
                 clearInterval(uptimeInterval);
+                clearInterval(autoSaveInterval);
+                
                 if (botStartTime) {
                     totalUptimeMs += (Date.now() - botStartTime);
                     botStartTime = null;
@@ -1233,7 +1304,6 @@
                     const logBox = document.getElementById('new-logs');
                     logBox.insertAdjacentHTML('beforeend', `<div class="text-yellow-300">[${timeStr}] SYSTEM ACTIVATED @${newPrice.toFixed(1)}. Grids are now active.</div>`);
                     
-                    // แสดง Pending Orders ทันทีเมื่อระบบ Activate เข้าเงื่อนไข
                     let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
                     for (let i = numGrids - 1; i >= 0; i--) {
                         let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
@@ -1314,7 +1384,6 @@
             currentPrice = newPrice;
             calculateAndUpdateAll();
 
-            // แสดงราคา Data Feed ทุกครั้งที่มีการเปลี่ยนแปลงราคา (Tick)
             if (newPrice !== startP) {
                 const logBox = document.getElementById('new-logs');
                 logBox.insertAdjacentHTML('beforeend', `<div class="text-gray-400 mt-1 mb-2">[${timeStr}] Data Feed Price : ${newPrice.toFixed(1)}</div>`);
@@ -1344,37 +1413,17 @@
         }
 
         // --- Security & Anti-Copy System ---
-        // ป้องกันการกดปุ่มคีย์บอร์ดลัดเพื่อดูโค้ดหรือก็อปปี้
         document.addEventListener('keydown', function(e) {
-            // ป้องกัน F12 (Developer Tools)
-            if (e.key === 'F12' || e.keyCode === 123) {
-                e.preventDefault();
-                return false;
-            }
-            // ป้องกัน Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C (Inspect/Console)
-            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
-                e.preventDefault();
-                return false;
-            }
-            // ป้องกัน Ctrl+U (View Source), Ctrl+S (Save), Ctrl+P (Print)
-            if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's' || e.key === 'P' || e.key === 'p')) {
-                e.preventDefault();
-                return false;
-            }
-            // ป้องกัน Ctrl+C (Copy), Ctrl+X (Cut) ยกเว้นกำลังพิมพ์ในช่อง Input
+            if (e.key === 'F12' || e.keyCode === 123) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) { e.preventDefault(); return false; }
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's' || e.key === 'P' || e.key === 'p')) { e.preventDefault(); return false; }
             if (e.ctrlKey && (e.key === 'C' || e.key === 'c' || e.key === 'X' || e.key === 'x')) {
-                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                    e.preventDefault();
-                    return false;
-                }
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); return false; }
             }
         });
 
-        // ป้องกันการ Copy เมนู (คลิกขวา Copy) หรือลากครอบข้อความ
         document.addEventListener('copy', function(e) {
-            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-            }
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); }
         });
     </script>
 </body>
