@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
+    <!-- บังคับไม่ให้เก็บ Cache เพื่อให้ได้ข้อมูลล่าสุดเสมอ -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -16,17 +17,20 @@
         body {
             font-family: 'Prompt', sans-serif;
             background-color: #f3f4f6;
+            /* ป้องกันการคลุมดำข้อความ (Anti-Select) */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
         }
+        /* อนุญาตให้พิมพ์และคลุมดำในช่องกรอกข้อมูล (Input) ได้ตามปกติ */
         input, select, textarea {
             -webkit-user-select: auto;
             -moz-user-select: auto;
             -ms-user-select: auto;
             user-select: auto;
         }
+        /* Custom Scrollbar for Desktop */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
@@ -40,7 +44,7 @@
 </head>
 <body class="text-gray-800 min-h-screen flex flex-col lg:h-screen lg:overflow-hidden" oncontextmenu="return false;" onselectstart="return false;" ondragstart="return false;">
 
-    <!-- Custom Alert Modal (Popup) -->
+    <!-- Custom Modal (Popup) -->
     <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl p-6 w-[90%] max-w-md transform scale-95 transition-transform duration-300 relative border border-gray-100">
             <div class="absolute top-4 right-4 cursor-pointer text-gray-400 hover:text-gray-600 transition" onclick="closeModal()">
@@ -48,8 +52,9 @@
             </div>
             <div class="flex items-start gap-4">
                 <div id="modal-icon" class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl">
+                    <!-- Icon -->
                 </div>
-                <div class="flex-1">
+                <div>
                     <h3 id="modal-title" class="text-lg font-bold text-gray-900 mb-1">Title</h3>
                     <p id="modal-message" class="text-sm text-gray-600 leading-relaxed">Message</p>
                     <div class="mt-6 flex justify-end">
@@ -94,16 +99,19 @@
     <!-- Navbar -->
     <nav class="bg-slate-900 text-white shadow-lg z-20 shrink-0 sticky top-0">
         <div class="px-4 lg:px-6 flex justify-between items-center h-16">
+            <!-- Logo & Tabs -->
             <div class="flex items-center gap-2 lg:gap-6">
                 <div class="text-lg lg:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300 whitespace-nowrap">
                     <i class="fa-solid fa-layer-group mr-1 lg:mr-2 text-blue-400"></i><span class="hidden sm:inline">TFF Grid Trading</span><span class="sm:hidden">TFF Grid</span>
                 </div>
+                <!-- Tabs (Hidden on mobile) -->
                 <div class="hidden md:flex space-x-1 bg-slate-800 p-1 rounded-lg">
                     <button id="nav-tab-symbol" class="px-4 py-1.5 bg-blue-600 rounded-md text-sm font-medium shadow">S50M26_LONG</button>
                     <button class="px-4 py-1.5 hover:bg-slate-700 rounded-md text-sm font-medium text-gray-300 transition">+ เปิดคู่ใหม่</button>
                 </div>
             </div>
             
+            <!-- Right Menu -->
             <div class="flex items-center gap-2 lg:gap-4">
                 <div class="flex items-center bg-slate-800 rounded-lg px-2 py-1 lg:px-3 border border-slate-700">
                     <span class="hidden lg:inline text-xs text-gray-400 mr-2">ENV:</span>
@@ -112,6 +120,7 @@
                         <option>Production</option>
                     </select>
                 </div>
+                <!-- ส่วนแสดง วันที่ เวลา และ Online -->
                 <div class="hidden sm:flex items-center gap-3">
                     <div id="uptime-container" class="hidden text-xs font-mono font-medium bg-slate-800 text-cyan-400 px-2 py-1 rounded border border-slate-700 items-center gap-1.5">
                         <i class="fa-solid fa-stopwatch"></i> <span id="uptime-text">00:00:00</span>
@@ -135,6 +144,7 @@
         <!-- Left Panel: Strategy Settings -->
         <div class="w-full lg:w-[340px] xl:w-[380px] flex-shrink-0 flex flex-col gap-4 lg:overflow-y-auto lg:pr-2 lg:pb-2">
             
+            <!-- Bot Control Box -->
             <div class="glass-panel p-4 lg:p-5 rounded-xl shadow-sm border border-gray-200 flex-shrink-0">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold text-gray-800"><i class="fa-solid fa-robot mr-2 text-blue-500"></i>ควบคุมบอท</h2>
@@ -150,6 +160,7 @@
                 </div>
             </div>
 
+            <!-- Trade Direction & Symbol -->
             <div class="glass-panel p-4 lg:p-5 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden flex-shrink-0">
                 <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
                 <div class="space-y-4 ml-2">
@@ -171,6 +182,7 @@
                 </div>
             </div>
 
+            <!-- Settings Form -->
             <div class="glass-panel p-4 lg:p-5 rounded-xl shadow-sm border border-gray-200 flex-shrink-0">
                 <div class="flex justify-between items-end mb-4 border-b border-gray-100 pb-3">
                     <h2 class="text-md lg:text-lg font-semibold text-gray-800">ตั้งค่ากลยุทธ์ Grid</h2>
@@ -181,6 +193,7 @@
                 </div>
 
                 <div class="space-y-5">
+                    <!-- Core Settings -->
                     <div class="bg-blue-50 p-3 lg:p-4 rounded-lg border border-blue-100 space-y-3">
                         <div class="flex items-center justify-between">
                             <label class="text-xs lg:text-sm font-medium text-gray-700">กรอบบน (Upper)</label>
@@ -200,6 +213,7 @@
                         </div>
                     </div>
 
+                    <!-- Risk Settings -->
                     <div class="pt-2 border-t border-gray-100 space-y-3">
                         <div class="text-sm font-medium text-gray-600 mb-3 flex items-center">
                             <i class="fa-solid fa-shield mr-2"></i>ตั้งค่าความเสี่ยง
@@ -222,10 +236,12 @@
                         </div>
                     </div>
 
+                    <!-- Advanced Settings -->
                     <div class="pt-2 border-t border-gray-100">
                         <div class="text-sm font-medium text-gray-600 mb-3 flex items-center">
                             <i class="fa-solid fa-sliders mr-2"></i>ตั้งค่าขั้นสูง
                         </div>
+                        
                         <div class="space-y-3 bg-gray-50 p-3 rounded-lg text-xs lg:text-sm border border-gray-100">
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-700">รวบไม้ตอนเปิด (ครั้งแรก)</span>
@@ -250,14 +266,16 @@
         <!-- Right Panel: Dashboard & Logs -->
         <div class="w-full lg:flex-1 flex flex-col gap-4 lg:overflow-hidden min-h-0">
             
+            <!-- KPI Cards -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 flex-shrink-0">
                 <div class="glass-panel p-3 lg:p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 relative overflow-hidden">
-                    <div class="text-[10px] lg:text-xs text-gray-500 mb-1">ราคาปัจจุบัน (S50M26)</div>
+                    <div class="text-[10px] lg:text-xs text-gray-500 mb-1">ราคาปัจจุบัน (Symbol)</div>
                     <div class="text-lg lg:text-2xl font-bold text-gray-800 flex items-center">
-                        <span id="current-price">995.0</span> 
-                        <i id="price-trend" class="fa-solid fa-caret-up text-green-500 text-md lg:text-lg ml-2"></i>
+                        <span id="current-price">---.-</span> 
+                        <i id="price-trend" class="fa-solid fa-minus text-gray-400 text-md lg:text-lg ml-2"></i>
                     </div>
                 </div>
+                <!-- Realized P/L -->
                 <div class="glass-panel p-3 lg:p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-green-500 relative overflow-hidden">
                     <div class="absolute top-2 right-3 opacity-10 text-gray-800"><i class="fa-solid fa-arrow-trend-up text-4xl"></i></div>
                     <div class="text-[10px] lg:text-xs text-gray-500 mb-1">กำไรรับรู้แล้ว (Realized P/L)</div>
@@ -269,46 +287,57 @@
                     <div id="kpi-hold" class="text-lg lg:text-2xl font-bold text-gray-800">0 <span class="text-[10px] lg:text-sm font-normal text-gray-500">สัญญา</span></div>
                     <div id="kpi-avg" class="text-[10px] lg:text-xs text-gray-400 mt-1">ทุนเฉลี่ย: 0.0</div>
                 </div>
+                <!-- Unrealized -->
                 <div class="glass-panel p-3 lg:p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-purple-500 relative">
                     <div class="text-[10px] lg:text-xs text-gray-500 mb-1">Unrealized</div>
                     <div id="kpi-unrealized" class="text-lg lg:text-2xl font-bold text-gray-800">฿0.00</div>
-                    <div id="kpi-dd" class="text-[10px] lg:text-xs text-red-500 mt-1 font-mono">Max DD: -0.00% | Cur: -0.00%</div>
+                    <div id="kpi-dd" class="text-[10px] lg:text-xs text-red-500 mt-1 font-mono">Max DD: -฿0.00 | Cur: -฿0.00</div>
                 </div>
             </div>
 
+            <!-- Visual Grid Monitor -->
             <div class="glass-panel p-4 lg:p-6 rounded-xl shadow-sm border border-gray-200 overflow-x-auto flex-shrink-0">
                 <h2 class="text-md lg:text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <i class="fa-solid fa-chart-line mr-2 text-indigo-500"></i>สถานะราคาในกรอบ Grid
                 </h2>
+                
                 <div class="relative w-[300px] sm:w-full h-16 mt-6 mx-auto sm:mx-0">
+                    <!-- Background Bar -->
                     <div class="absolute top-1/2 left-0 w-full h-2 lg:h-3 bg-gray-200 rounded-full transform -translate-y-1/2"></div>
+                    <!-- Active Grid Zone -->
                     <div class="absolute top-1/2 left-[10%] w-[80%] h-2 lg:h-3 bg-gradient-to-r from-blue-200 via-green-200 to-blue-200 rounded-full transform -translate-y-1/2 border-y border-gray-300"></div>
                     
+                    <!-- Lower Bound Marker -->
                     <div class="absolute top-1/2 left-[10%] w-0.5 h-6 lg:h-8 bg-blue-600 transform -translate-y-1/2">
                         <div id="vis-lower" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-blue-600">990.0</div>
                         <div class="absolute -top-5 lg:-top-6 -left-4 lg:-left-6 text-[10px] lg:text-xs text-gray-500 whitespace-nowrap">กรอบล่าง</div>
                     </div>
                     
+                    <!-- Upper Bound Marker -->
                     <div class="absolute top-1/2 right-[10%] w-0.5 h-6 lg:h-8 bg-blue-600 transform -translate-y-1/2">
                         <div id="vis-upper" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-blue-600">1000.0</div>
                         <div class="absolute -top-5 lg:-top-6 -left-3 lg:-left-4 text-[10px] lg:text-xs text-gray-500 whitespace-nowrap">กรอบบน</div>
                     </div>
 
-                    <div id="marker-sl" class="absolute top-1/2 left-[2%] w-0.5 h-4 lg:h-6 bg-red-500 transform -translate-y-1/2 transition-all duration-300 z-0">
-                        <div id="vis-sl-text" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-red-500">780.0</div>
+                    <!-- Stop Loss Marker -->
+                    <div id="marker-sl" class="absolute top-1/2 left-[2%] w-0.5 h-4 lg:h-6 bg-red-500 transform -translate-y-1/2 transition-all duration-300 z-0 hidden">
+                        <div id="vis-sl-text" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-red-500"></div>
                         <div class="absolute -top-5 lg:-top-6 -left-2 text-[10px] lg:text-xs text-red-500 whitespace-nowrap">SL</div>
                     </div>
 
+                    <!-- Current Price Indicator (Animated) -->
                     <div id="price-indicator" class="absolute top-1/2 left-[50%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-500 ease-in-out z-10">
-                        <div class="bg-gray-800 text-white text-[10px] lg:text-xs font-bold py-0.5 px-1.5 lg:py-1 lg:px-2 rounded mb-1 shadow-lg flex items-center gap-1">
-                            <span id="indicator-price">995.0</span>
+                        <div class="bg-gray-800 text-white text-[10px] lg:text-xs font-bold py-0.5 px-1.5 lg:py-1 lg:px-2 rounded mb-1 shadow-lg flex items-center gap-1 whitespace-nowrap">
+                            <span id="indicator-price">---.-</span>
                         </div>
                         <div class="w-3 h-3 lg:w-4 lg:h-4 bg-white border-[3px] lg:border-4 border-gray-800 rounded-full shadow-md"></div>
                     </div>
                 </div>
             </div>
 
+            <!-- Logs & Orders -->
             <div class="glass-panel rounded-xl shadow-sm border border-gray-200 flex flex-col h-[350px] lg:h-auto lg:flex-1 min-h-0 overflow-hidden shrink-0 lg:shrink">
+                <!-- Tab Headers -->
                 <div class="flex overflow-x-auto border-b border-gray-200 bg-gray-50 rounded-t-xl whitespace-nowrap flex-shrink-0">
                     <button id="tab-btn-activity" onclick="switchTab('activity')" class="px-4 lg:px-6 py-2 lg:py-3 text-[11px] lg:text-sm font-semibold text-blue-600 border-b-2 border-blue-600 bg-white">
                         <i class="fa-solid fa-list-ul mr-1 lg:mr-2"></i>Activity Logs
@@ -321,14 +350,24 @@
                     </button>
                 </div>
                 
+                <!-- Terminal Content Wrapped in Absolute Position -->
                 <div class="relative flex-1 bg-slate-900 min-h-0">
+                    
+                    <!-- TAB: Activity Logs -->
                     <div id="tab-activity" class="absolute inset-0 p-3 lg:p-4 overflow-y-auto font-mono text-[11px] lg:text-[13px] text-gray-300 leading-relaxed block">
-                        <div class="text-green-400" id="log-initial-msg">[System] Initialized. Waiting for bot start...</div>
+                        <div class="text-green-400" id="log-initial-msg">[System] Initialized. Ready to connect...</div>
                         <div class="opacity-50" id="log-initial-divider">---------------------------------------------------</div>
                         <div id="new-logs"></div>
+                        
+                        <!-- UI Status Bar -->
+                        <div id="live-status-bar" class="mt-3 text-[11px] lg:text-xs text-cyan-400 font-mono animate-pulse hidden items-center">
+                            <span id="live-status-text">Waiting for data update...</span>
+                        </div>
+                        
                         <div id="typing-cursor" class="inline-block w-1.5 h-3 lg:w-2 lg:h-4 bg-green-500 animate-pulse mt-1"></div>
                     </div>
 
+                    <!-- TAB: Open Orders -->
                     <div id="tab-open" class="absolute inset-0 p-0 overflow-y-auto font-mono text-[11px] lg:text-[13px] text-gray-300 hidden">
                         <table class="w-full text-left border-collapse">
                             <thead class="text-gray-400 bg-slate-800 sticky top-0 shadow-md">
@@ -345,6 +384,7 @@
                         </table>
                     </div>
 
+                    <!-- TAB: Order History -->
                     <div id="tab-history" class="absolute inset-0 p-0 overflow-y-auto font-mono text-[11px] lg:text-[13px] text-gray-300 hidden">
                         <table class="w-full text-left border-collapse">
                             <thead class="text-gray-400 bg-slate-800 sticky top-0 shadow-md">
@@ -361,8 +401,10 @@
                             </tbody>
                         </table>
                     </div>
+
                 </div>
             </div>
+
         </div>
     </main>
     
@@ -386,8 +428,7 @@
 
         let isBotRunning = false;
         let isResuming = false; 
-        let currentPrice = 995.0; 
-        let priceInterval;
+        let currentPrice = 0.0; 
         let currentDirection = 'LONG';
         let currentTab = 'activity';
         
@@ -398,6 +439,7 @@
         let sumEntry = 0;
         let matchedCycles = 0;
         
+        // High-Water Mark Absolute Drawdown Variables
         let currentUnrealizedPNL = 0;
         let maxTotalPnL = 0;
         let currentDrawdownTHB = 0;
@@ -412,14 +454,28 @@
         let targetUnrealized = null;
 
         let closedTradesHistory = [];
+
+        // --- Live Data Feed Engine Variables ---
+        let priceQueue = []; 
+        let lastSeenTimeKey = null; 
+        let lastProcessedMs = null; 
+        let lastTickTimeMs = null; // ตัวแปรสำหรับ Dynamic Gap Detection
+        let dataPlayInterval = null; 
+        let dataPollInterval = null;
+        let tickCountdownInterval = null;
+        let nextTickTime = 0;
         
-        // Uptime Tracking & Auto Save
+        // Time, Uptime Tracker & AutoSave Variables
         let botStartTime = null;
         let totalUptimeMs = 0;
         let uptimeInterval = null;
         let autoSaveInterval = null;
+        let marketWaitInterval = null; 
 
-        // --- Custom Alert Modal ---
+        // URL ใหม่ล่าสุดสำหรับดึงข้อมูล (GitHub Raw)
+        const DATA_FETCH_URL = 'https://raw.githubusercontent.com/tfexff/tfex-data/main/data/S501_1m_LATEST.csv';
+
+        // --- Custom Modal / Message Box ---
         function showModal(title, message, type = 'error') {
             const modal = document.getElementById('custom-modal');
             const modalTitle = document.getElementById('modal-title');
@@ -435,12 +491,13 @@
             } else if (type === 'warning') {
                 modalIcon.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl bg-yellow-100 text-yellow-600';
                 modalIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
-            } else {
+            } else if (type === 'info') {
                 modalIcon.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl bg-blue-100 text-blue-600';
                 modalIcon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
             }
 
             modal.classList.remove('hidden');
+            // Trigger reflow
             void modal.offsetWidth;
             modal.classList.remove('opacity-0');
             modal.querySelector('div').classList.remove('scale-95');
@@ -504,6 +561,34 @@
             }, 300);
         }
 
+        function addSystemLog(msg, colorClass = "text-gray-400") {
+            const logBox = document.getElementById('new-logs');
+            logBox.insertAdjacentHTML('beforeend', `<div class="${colorClass} mt-1">${msg}</div>`);
+            while (logBox.children.length > 500) { 
+                logBox.removeChild(logBox.firstChild);
+            }
+            const scrollBox = document.getElementById('tab-activity');
+            scrollBox.scrollTop = scrollBox.scrollHeight;
+        }
+
+        // --- Helper Function: ดึงเวลาปัจจุบัน ---
+        function getCurrentTimeMs() {
+            return Date.now();
+        }
+
+        function getCurrentTimeStr() {
+            return formatTimeFromMs(getCurrentTimeMs());
+        }
+
+        // แปลง Timestamp (ms) เป็น String (HH:MM:SS) เพื่อใช้แสดงใน Log
+        function formatTimeFromMs(ms) {
+            let d = new Date(ms);
+            let h = String(d.getHours()).padStart(2, '0');
+            let m = String(d.getMinutes()).padStart(2, '0');
+            let s = String(d.getSeconds()).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
         // --- Update Clock & Uptime ---
         function updateClock() {
             const now = new Date();
@@ -531,6 +616,258 @@
                             String(secs).padStart(2, '0');
                 
             document.getElementById('uptime-text').innerText = formatted;
+        }
+
+        // --- UI Status ---
+        function updateTickCountdownUI() {
+            const statusBar = document.getElementById('live-status-bar');
+            const statusText = document.getElementById('live-status-text');
+            const statusBadge = document.getElementById('bot-status-badge');
+            
+            if (!isBotRunning) {
+                if (statusBar) {
+                    statusBar.classList.add('hidden');
+                    statusBar.classList.remove('flex');
+                }
+                return;
+            }
+            
+            statusBar.classList.remove('hidden');
+            statusBar.classList.add('flex');
+
+            // ตรวจจับสถานะการ Standby เบื้องหลัง เมื่อคิวว่างและข้อมูลล่าสุดเก่าเกิน 30 นาที (อัปเดตใหม่)
+            if (priceQueue.length === 0) {
+                let nowMs = getCurrentTimeMs();
+                if (!lastProcessedMs || (nowMs - lastProcessedMs > 30 * 60 * 1000)) {
+                    statusText.innerHTML = `<span class="text-yellow-400"><i class="fa-solid fa-search"></i> STANDBY: รอข้อมูล หรือ ตลาดปิด...</span>`;
+                    statusBadge.textContent = "STANDBY";
+                    statusBadge.className = "px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full border border-yellow-200 animate-pulse";
+                    return;
+                }
+            }
+            
+            statusText.innerHTML = `Waiting for data update...`;
+            statusBadge.textContent = "กำลังทำงาน";
+            statusBadge.className = "px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200 animate-pulse";
+        }
+
+        // --- Helper Function: แปลงวันที่และเวลาใน CSV ให้เป็นมิลลิวินาที (Unix Timestamp) ที่แม่นยำ ---
+        function parseCsvDateTimeToMs(dStr, tStr) {
+            if (!dStr || !tStr) return 0;
+            
+            let year = 0, month = 0, day = 0;
+            if (dStr.includes('/')) {
+                let parts = dStr.split('/');
+                if (parts[0].length === 4) { year = parseInt(parts[0]); month = parseInt(parts[1]) - 1; day = parseInt(parts[2]); }
+                else { day = parseInt(parts[0]); month = parseInt(parts[1]) - 1; year = parseInt(parts[2]); }
+            } else if (dStr.includes('-')) {
+                let parts = dStr.split('-');
+                year = parseInt(parts[0]); month = parseInt(parts[1]) - 1; day = parseInt(parts[2]);
+            } else if (dStr.length === 8) {
+                year = parseInt(dStr.slice(0, 4)); month = parseInt(dStr.slice(4, 6)) - 1; day = parseInt(dStr.slice(6, 8));
+            } else { return 0; }
+
+            let hour = 0, minute = 0, second = 0;
+            if (tStr.includes(':')) {
+                let parts = tStr.split(':');
+                hour = parseInt(parts[0]); minute = parseInt(parts[1]);
+                if (parts.length > 2) second = parseInt(parts[2]);
+            } else {
+                let cleanT = tStr.padStart(6, '0');
+                hour = parseInt(cleanT.slice(0, 2)); minute = parseInt(cleanT.slice(2, 4)); second = parseInt(cleanT.slice(4, 6));
+            }
+
+            return new Date(year, month, day, hour, minute, second).getTime();
+        }
+
+        // --- Data Parser Engine (Robust) ---
+        function parseCsvLine(line) {
+            let cols = line.split(',').map(c => c.trim());
+            if(cols.length < 5) return null;
+            
+            let o, h, l, c, dStr = "", tStr = "";
+            let found = false;
+            
+            for(let i = cols.length - 4; i >= 0; i--) {
+                let n1 = parseFloat(cols[i]); let n2 = parseFloat(cols[i+1]); let n3 = parseFloat(cols[i+2]); let n4 = parseFloat(cols[i+3]);
+                
+                if(!isNaN(n1) && !isNaN(n2) && !isNaN(n3) && !isNaN(n4)) {
+                    let max = Math.max(n1, n2, n3, n4); let min = Math.min(n1, n2, n3, n4);
+                    if (max === n2 && min === n3) {
+                        o = n1; h = n2; l = n3; c = n4;
+                        if (i > 0) tStr = cols[i-1];
+                        if (i > 1) dStr = cols[i-2];
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!found) {
+                let hasLetters = /[a-zA-Z]/.test(cols[0]);
+                let dIdx = hasLetters ? 1 : 0;
+                dStr = cols[dIdx];
+                tStr = cols[dIdx+1];
+                o = parseFloat(cols[dIdx+2]); h = parseFloat(cols[dIdx+3]); l = parseFloat(cols[dIdx+4]); c = parseFloat(cols[dIdx+5]);
+            }
+            
+            if(isNaN(o) || isNaN(h) || isNaN(l) || isNaN(c)) return null;
+            
+            let displayTime = tStr || "Live";
+            if(displayTime.length === 6 && !displayTime.includes(':') && !isNaN(displayTime)) {
+                displayTime = `${displayTime.slice(0,2)}:${displayTime.slice(2,4)}:${displayTime.slice(4,6)}`;
+            } else if (displayTime.length === 5 && displayTime.includes(':')) {
+                displayTime += ":00"; 
+            }
+
+            let timeMs = parseCsvDateTimeToMs(dStr, tStr);
+
+            return {
+                timeKey: (dStr + "_" + tStr),
+                t: displayTime, timeMs: timeMs, o, h, l, c, rawLine: line
+            };
+        }
+
+        function createTicksFromCandle(parsed) {
+            let baseTime = parsed.t.length >= 5 ? parsed.t.slice(0, 5) : parsed.t;
+            let t00 = baseTime + ':00'; let t15 = baseTime + ':15'; let t30 = baseTime + ':30'; let t45 = baseTime + ':45';
+
+            let newTicks = [];
+            if(parsed.c >= parsed.o) {
+                newTicks.push({p: parsed.o, t: t00, timeMs: parsed.timeMs, phase: 'Open', isNewCandle: true, o: parsed.o, h: parsed.h, l: parsed.l, c: parsed.c});
+                newTicks.push({p: parsed.l, t: t15, timeMs: parsed.timeMs + 15000, phase: 'Low'});
+                newTicks.push({p: parsed.h, t: t30, timeMs: parsed.timeMs + 30000, phase: 'High'});
+                newTicks.push({p: parsed.c, t: t45, timeMs: parsed.timeMs + 45000, phase: 'Close'});
+            } else {
+                newTicks.push({p: parsed.o, t: t00, timeMs: parsed.timeMs, phase: 'Open', isNewCandle: true, o: parsed.o, h: parsed.h, l: parsed.l, c: parsed.c});
+                newTicks.push({p: parsed.h, t: t15, timeMs: parsed.timeMs + 15000, phase: 'High'});
+                newTicks.push({p: parsed.l, t: t30, timeMs: parsed.timeMs + 30000, phase: 'Low'});
+                newTicks.push({p: parsed.c, t: t45, timeMs: parsed.timeMs + 45000, phase: 'Close'});
+            }
+            return newTicks;
+        }
+
+        // --- Sync Data Engine (แก้ไขให้ดึงข้อมูลอ้างอิง Real-Time ล่าสุด) ---
+        async function syncToLatestData() {
+            const url = DATA_FETCH_URL + '?t=' + Date.now();
+            try {
+                const response = await fetch(url, { cache: 'no-store' });
+                if (!response.ok) return 'ERROR';
+                const csvText = await response.text();
+                const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+
+                let nowMs = getCurrentTimeMs(); 
+                let cutoffMs = nowMs - (20 * 60 * 1000); // กำหนดเวลาดึงข้อมูลย้อนหลัง 20 นาทีตามที่ต้องการ
+                let futureToleranceMs = nowMs + (5 * 60 * 1000); // เผื่อเวลา Server เร็วกว่าเครื่อง 5 นาที
+                let validLines = [];
+
+                // สแกนย้อนหลังจากบรรทัดสุดท้าย
+                let startIdx = Math.max(0, lines.length - 100);
+                for(let i = lines.length - 1; i >= startIdx; i--) {
+                    let parsed = parseCsvLine(lines[i]);
+                    if (!parsed || parsed.timeMs === 0) continue;
+                    
+                    if (parsed.timeMs >= cutoffMs && parsed.timeMs <= futureToleranceMs) {
+                        validLines.unshift(parsed); 
+                    }
+                }
+
+                if (validLines.length === 0) {
+                    return 'STANDBY'; 
+                }
+
+                let latestValid = validLines[validLines.length - 1];
+                let diffMs = nowMs - latestValid.timeMs;
+
+                // ถ้าราคาล่าสุดที่ใช้ได้ มันเก่าเกิน 30 นาที แปลว่าตลาดปิด หรือข้อมูลยังไม่มา
+                if (diffMs > 30 * 60 * 1000) {
+                    currentPrice = parseFloat(latestValid.c.toFixed(1));
+                    lastSeenTimeKey = latestValid.timeKey;
+                    lastProcessedMs = latestValid.timeMs;
+                    return 'STANDBY_MARKET_CLOSED';
+                }
+
+                // นำข้อมูลทั้งหมดในกรอบเวลา (หลายบรรทัด) มาสร้างเป็น Ticks จำลองการแกว่งตัว
+                let foundRows = validLines; 
+
+                let ticks = [];
+                for (let r of foundRows) {
+                    lastSeenTimeKey = r.timeKey;
+                    lastProcessedMs = r.timeMs;
+                    // ซ่อนข้อความ Log สีม่วง (Datafeed SYNC)
+                    // addSystemLog(`[Datafeed] SYNC: ${r.rawLine}`, "text-purple-400 text-[10px]");
+                    ticks.push(...createTicksFromCandle(r));
+                }
+
+                currentPrice = parseFloat(ticks[0].p.toFixed(1));
+                priceQueue = ticks;
+                return 'SUCCESS';
+
+            } catch (e) {
+                console.error("Sync Data Error: ", e);
+                return 'ERROR';
+            }
+        }
+
+        // ระบบหลังบ้านคอยไปเคาะถามไฟล์ว่ามีบรรทัดใหม่หรือไม่ (ยึดเวลา Real-Time)
+        async function pollForNewData() {
+            if (!isBotRunning) return;
+            const url = DATA_FETCH_URL + '?t=' + Date.now();
+            try {
+                const res = await fetch(url, { cache: 'no-store' });
+                if (!res.ok) return;
+                const text = await res.text();
+                const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length > 0);
+                
+                let newRows = [];
+                let found = false;
+                let maxScan = Math.max(0, lines.length - 60); 
+                let nowMs = getCurrentTimeMs(); 
+                let cutoffMs = nowMs - (40 * 60 * 1000); // ขยายเป็น 40 นาทีเช่นเดียวกัน
+                let futureToleranceMs = nowMs + (5 * 60 * 1000);
+                
+                for(let i = lines.length - 1; i >= maxScan; i--) {
+                    let parsed = parseCsvLine(lines[i]);
+                    if (!parsed || parsed.timeMs === 0) continue;
+
+                    if (parsed.timeKey === lastSeenTimeKey) {
+                        found = true;
+                        break;
+                    }
+                    
+                    if (parsed.timeMs >= cutoffMs && parsed.timeMs <= futureToleranceMs) {
+                        newRows.unshift(parsed);
+                    }
+                }
+
+                // กรณีเน็ตหลุดนานหรือข้ามวันจนหา key เก่าไม่เจอ ให้กู้ข้อมูลอัตโนมัติ
+                if (!found && lines.length > 0) {
+                     newRows = [];
+                     for(let i = lines.length - 1; i >= maxScan; i--) {
+                         let parsed = parseCsvLine(lines[i]);
+                         if (!parsed || parsed.timeMs === 0) continue;
+                         
+                         if (parsed.timeMs >= cutoffMs && parsed.timeMs <= futureToleranceMs) {
+                             newRows.unshift(parsed);
+                         }
+                     }
+                     if (newRows.length > 2) newRows = newRows.slice(-2); 
+                }
+
+                if (newRows.length > 0) {
+                    let newTicks = [];
+                    for(let r of newRows) {
+                        lastSeenTimeKey = r.timeKey;
+                        lastProcessedMs = r.timeMs;
+                        // ซ่อนข้อความ Log สีม่วง (Datafeed UPDATE)
+                        // addSystemLog(`[Datafeed] UPDATE: ${r.rawLine}`, "text-purple-400 text-[10px]");
+                        newTicks.push(...createTicksFromCandle(r));
+                    }
+                    priceQueue.push(...newTicks);
+                }
+            } catch (e) {
+                console.error("Polling Data Error: ", e);
+            }
         }
 
         // --- Visual Grid Updater ---
@@ -565,6 +902,7 @@
             priceIndicator.style.left = `${percPrice}%`;
         }
 
+        // ฟังก์ชันอัปเดตชื่อแท็บด้านบน
         function updateNavTab() {
             const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
             document.getElementById('nav-tab-symbol').innerText = `${symbol}_${currentDirection}`;
@@ -576,8 +914,8 @@
         document.getElementById('inp-symbol').addEventListener('input', updateNavTab); 
         
         window.addEventListener('DOMContentLoaded', () => {
-            updateVisualGrid();
             updateNavTab();
+            updateVisualGrid();
         });
 
         // --- Functions ---
@@ -655,7 +993,7 @@
         function getSystemStateObj() {
             const currentUptimeToSave = totalUptimeMs + (isBotRunning && botStartTime ? Date.now() - botStartTime : 0);
             return {
-                version: '1.4',
+                version: '2.1',
                 timestamp: new Date().toISOString(),
                 state: {
                     pArr: Array.from(pArr),
@@ -669,6 +1007,8 @@
                     closedTradesHistory,
                     isWaitingActivation, activationTarget, activationDirection,
                     stopLossTarget, targetRealized, targetUnrealized,
+                    priceQueue: Array.from(priceQueue),
+                    lastProcessedMs: lastProcessedMs,
                     totalUptimeMs: currentUptimeToSave
                 },
                 inputs: {
@@ -688,7 +1028,7 @@
             };
         }
 
-        // --- Save / Load Feature ---
+        // --- Auto Save & Export Features ---
         function exportSaveFile() {
             if (isBotRunning) {
                 showModal("แจ้งเตือน", "โปรดกด <b>STOP</b> บอทก่อนทำการบันทึกข้อมูลแบบ Manual ครับ", "warning");
@@ -723,21 +1063,15 @@
             const saveData = getSystemStateObj();
             const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
             
-            // แบ็คอัปเงียบๆ ลง LocalStorage ตามชื่อ Symbol (ไม่มีการให้ดาวน์โหลดไฟล์)
             localStorage.setItem(`TFF_AutoSave_${symbol}`, JSON.stringify(saveData));
 
-            const timeStr = new Date().toLocaleTimeString('en-GB', { hour12: false });
-            const logBox = document.getElementById('new-logs');
-            logBox.insertAdjacentHTML('beforeend', `<div class="text-blue-400 mt-1 mb-2">[${timeStr}] 💾 Auto-Saved to Browser Cache (${symbol})</div>`);
-            
-            while (logBox.children.length > 500) {
-                logBox.removeChild(logBox.firstChild);
-            }
-            
-            const scrollBox = document.getElementById('tab-activity');
-            scrollBox.scrollTop = scrollBox.scrollHeight;
+            let d = new Date();
+            let timeStr = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
+            // ซ่อนข้อความแจ้งเตือน Auto-Save
+            // addSystemLog(`[${timeStr}] 💾 Auto-Saved  Symbol ${symbol}`, "text-blue-400 mt-1 mb-2");
         }
 
+        // --- Data Restoration ---
         function applySaveData(saveData) {
             document.getElementById('inp-symbol').value = saveData.inputs.symbol || '';
             document.getElementById('inp-upper').value = saveData.inputs.upper || '';
@@ -776,6 +1110,9 @@
             stopLossTarget = saveData.state.stopLossTarget || null;
             targetRealized = saveData.state.targetRealized || null;
             targetUnrealized = saveData.state.targetUnrealized || null;
+            
+            priceQueue = saveData.state.priceQueue || [];
+            lastProcessedMs = saveData.state.lastProcessedMs || null;
             totalUptimeMs = saveData.state.totalUptimeMs || 0;
             botStartTime = null;
 
@@ -799,13 +1136,13 @@
             const btnStart = document.getElementById('btn-start');
             btnStart.innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> RE-START';
             btnStart.className = "flex-1 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white py-3 rounded-lg font-bold shadow-lg shadow-yellow-200 transition transform hover:-translate-y-0.5";
+            btnStart.disabled = false;
             
             isResuming = true;
             
-            const logContainer = document.getElementById('new-logs');
-            logContainer.insertAdjacentHTML('beforeend', `<div class="text-blue-400 mt-2">[${new Date().toLocaleTimeString('en-GB', { hour12: false })}] 📥 SYSTEM STATE RESTORED SUCCESSFULLY.</div>`);
-            const scrollBox = document.getElementById('tab-activity');
-            scrollBox.scrollTop = scrollBox.scrollHeight;
+            let d = new Date();
+            let timeStr = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
+            addSystemLog(`[${timeStr}] 📥 SYSTEM STATE RESTORED SUCCESSFULLY.`, "text-blue-400 mt-2");
         }
 
         function loadFromCache() {
@@ -832,6 +1169,7 @@
                 try {
                     const saveData = JSON.parse(e.target.result);
                     applySaveData(saveData);
+                    closeLoadModal();
                 } catch(err) {
                     console.error(err);
                     showModal("ข้อผิดพลาด", "เกิดข้อผิดพลาดในการโหลดไฟล์ ตรวจสอบความถูกต้องของไฟล์ Save อีกครั้ง", "error");
@@ -841,6 +1179,7 @@
             event.target.value = ''; 
         }
 
+        // --- Tabs / Table Updates ---
         function switchTab(tabId) {
             currentTab = tabId;
             const tabs = ['activity', 'open', 'history'];
@@ -920,21 +1259,11 @@
         }
 
         function addLog(action, price, contracts, pnl, time) {
-            const logBox = document.getElementById('new-logs');
             let pnlText = pnl !== null ? ` | PnL: <span class="${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}">${pnl >= 0 ? '+' : ''}${pnl.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>` : '';
-            
-            let colorClass = action.toUpperCase().includes('BUY') ? 'text-cyan-300' : (action.toUpperCase().includes('SELL') ? 'text-pink-300' : 'text-amber-400 font-bold');
-            
-            let msg = `<div class="${colorClass}">[${time}] ${action.padEnd(12)} | ${contracts} Con. | @${price.toFixed(1)}${pnlText}</div>`;
-            
-            logBox.insertAdjacentHTML('beforeend', msg);
-            
-            while (logBox.children.length > 500) {
-                logBox.removeChild(logBox.firstChild);
-            }
-            
-            const scrollBox = document.getElementById('tab-activity');
-            scrollBox.scrollTop = scrollBox.scrollHeight;
+            let upperAction = action.toUpperCase();
+            let colorClass = upperAction.includes('BUY') ? 'text-cyan-300' : (upperAction.includes('SELL') ? 'text-pink-300' : 'text-amber-400 font-bold');
+            let msg = `[${time}] ${action.padEnd(12)} | ${contracts} Con. | @${price.toFixed(1)}${pnlText}`;
+            addSystemLog(msg, colorClass);
         }
 
         function calculateAndUpdateAll() {
@@ -964,7 +1293,6 @@
 
         function updateKPIs() {
             document.getElementById('current-price').innerText = currentPrice.toFixed(1);
-            document.getElementById('indicator-price').innerText = currentPrice.toFixed(1);
             
             let realizedColor = realizedPNL >= 0 ? 'text-emerald-600' : 'text-red-600';
             document.getElementById('kpi-realized').innerHTML = `<span class="${realizedColor}">${realizedPNL >= 0 ? '+' : ''}฿${realizedPNL.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>`;
@@ -979,15 +1307,21 @@
             let unrealizedColor = currentUnrealizedPNL >= 0 ? 'text-emerald-600' : 'text-red-600';
             document.getElementById('kpi-unrealized').innerHTML = `<span class="${unrealizedColor}">${currentUnrealizedPNL >= 0 ? '+' : ''}฿${currentUnrealizedPNL.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>`;
             
-            let currentDrawdownPct = (currentDrawdownTHB / capital) * 100;
-            let maxDrawdownPct = (maxDrawdownTHB / capital) * 100;
-            document.getElementById('kpi-dd').innerText = `Max DD: -${maxDrawdownPct.toFixed(2)}% | Cur: -${currentDrawdownPct.toFixed(2)}%`;
+            document.getElementById('kpi-dd').innerText = `Max DD: -฿${maxDrawdownTHB.toLocaleString('en-US', {minimumFractionDigits: 2})} | Cur: -฿${currentDrawdownTHB.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
 
             let visLower = parseFloat(document.getElementById('vis-lower').innerText);
             let visUpper = parseFloat(document.getElementById('vis-upper').innerText);
             let percentage = 10 + ((currentPrice - visLower) / (visUpper - visLower)) * 80;
             percentage = Math.max(0, Math.min(percentage, 100)); 
-            document.getElementById('price-indicator').style.left = `${percentage}%`;
+            
+            let priceIndicator = document.getElementById('price-indicator');
+            priceIndicator.style.left = `${percentage}%`;
+            
+            if (priceQueue.length === 0 && isBotRunning) {
+                document.getElementById('indicator-price').innerHTML = `${currentPrice.toFixed(1)} <i class="fa-solid fa-circle-notch fa-spin ml-1 text-[8px]"></i>`;
+            } else {
+                document.getElementById('indicator-price').innerHTML = `${currentPrice.toFixed(1)}`;
+            }
 
             if (currentTab === 'open') renderOpenOrders();
         }
@@ -1008,7 +1342,7 @@
                         realizedPNL -= comm;
                         totalComm += comm;
                         
-                        addLog(`Match Buy (Target: ${pArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
+                        addLog(`Match Buy (Target: ${tArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
                         batchedCount++;
                     }
                 } else {
@@ -1021,40 +1355,44 @@
                         realizedPNL -= comm;
                         totalComm += comm;
                         
-                        addLog(`Match Sell (Target: ${pArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
+                        addLog(`Match Sell (Target: ${tArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
                         batchedCount++;
                     }
                 }
             }
             if (batchedCount > 0) {
-                const logBox = document.getElementById('new-logs');
-                logBox.insertAdjacentHTML('beforeend', `<div class="text-gray-400 mt-1 mb-2">[${timeStr}] Data Feed Price : ${execPrice.toFixed(1)}</div>`);
-                
-                const scrollBox = document.getElementById('tab-activity');
-                scrollBox.scrollTop = scrollBox.scrollHeight;
-
                 calculateAndUpdateAll();
             }
         }
 
         function forceStopBot(reason) {
-            const logBox = document.getElementById('new-logs');
-            logBox.insertAdjacentHTML('beforeend', `<div class="text-red-400 font-bold mt-2">[${new Date().toLocaleTimeString('en-GB', { hour12: false })}] SYSTEM HALTED: ${reason}</div>`);
+            let d = new Date();
+            let timeStr = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
+            addSystemLog(`[${timeStr}] SYSTEM HALTED: ${reason}`, "text-red-400 font-bold mt-2");
             
-            const scrollBox = document.getElementById('tab-activity');
-            scrollBox.scrollTop = scrollBox.scrollHeight;
-
             isBotRunning = false;
-            clearInterval(priceInterval);
-            clearInterval(uptimeInterval);
-            clearInterval(autoSaveInterval);
+            clearInterval(dataPlayInterval);
+            clearInterval(dataPollInterval);
+            if (tickCountdownInterval) clearInterval(tickCountdownInterval);
+            if (uptimeInterval) clearInterval(uptimeInterval);
+            if (autoSaveInterval) clearInterval(autoSaveInterval);
+            if (marketWaitInterval) {
+                clearInterval(marketWaitInterval);
+                marketWaitInterval = null;
+            }
             
             if (botStartTime) {
                 totalUptimeMs += (Date.now() - botStartTime);
                 botStartTime = null;
             }
             updateUptimeDisplay();
-            
+
+            const statusBar = document.getElementById('live-status-bar');
+            if (statusBar) {
+                statusBar.classList.add('hidden');
+                statusBar.classList.remove('flex');
+            }
+
             const btnStart = document.getElementById('btn-start');
             const btnStop = document.getElementById('btn-stop');
             const statusBadge = document.getElementById('bot-status-badge');
@@ -1062,7 +1400,7 @@
             btnStop.classList.replace('bg-red-500', 'bg-gray-200');
             btnStop.classList.replace('text-white', 'text-gray-500');
             btnStop.classList.remove('hover:bg-red-600', 'shadow-lg', 'transform', 'hover:-translate-y-0.5');
-            btnStop.classList.add('cursor-not-allowed');
+            btnStop.classList.add('cursor-not-allowed'); 
             btnStop.disabled = true;
 
             btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START';
@@ -1078,47 +1416,65 @@
             document.getElementById('inp-adv-batch').checked = false;
         }
 
-        function toggleBot(start) {
+        function startBotSequence(startTimeStr, isBatchFill, currentPrice) {
+            addSystemLog(`[${startTimeStr}] BOT STARTED in ${currentDirection} MODE. Grids initialized.`, "text-green-400 mt-2");
+            
+            let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+            let dirTxt = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SHORT';
+            let dirColor = currentDirection === 'LONG' ? 'text-cyan-300' : 'text-pink-300';
+            for (let i = numGrids - 1; i >= 0; i--) {
+                if (currentDirection === 'LONG' && pArr[i] <= currentPrice) {
+                    addSystemLog(`[${startTimeStr}] ${dirTxt.padEnd(12)} | ${contracts} Con. | @${pArr[i].toFixed(1)}`, `${dirColor} text-[10px] lg:text-[11px]`);
+                } else if (currentDirection === 'SHORT' && pArr[i] >= currentPrice) {
+                    addSystemLog(`[${startTimeStr}] ${dirTxt.padEnd(12)} | ${contracts} Con. | @${pArr[i].toFixed(1)}`, `${dirColor} text-[10px] lg:text-[11px]`);
+                }
+            }
+
+            if (isBatchFill) executeBatchFill(currentPrice, startTimeStr);
+        }
+
+        async function toggleBot(start) {
             const btnStart = document.getElementById('btn-start');
             const btnStop = document.getElementById('btn-stop');
             const statusBadge = document.getElementById('bot-status-badge');
-            const logContainer = document.getElementById('new-logs');
-            let timeStr = new Date().toLocaleTimeString('en-GB', { hour12: false });
 
             if (start) {
-                if (!isResuming) {
+                const logContainer = document.getElementById('new-logs');
+                let isFreshStart = !isResuming; 
+
+                // --- 1. Validation Phase & Grid Initialization ---
+                if (isFreshStart) {
                     const symbolStr = document.getElementById('inp-symbol').value.trim();
                     const upperVal = parseFloat(document.getElementById('inp-upper').value);
                     const lowerVal = parseFloat(document.getElementById('inp-lower').value);
                     const spacingVal = parseFloat(document.getElementById('inp-spacing').value);
                     const contractVal = parseInt(document.getElementById('inp-contracts').value, 10);
+                    const actValStr = document.getElementById('inp-risk-activation').value;
+                    const slValStr = document.getElementById('inp-risk-sl').value;
+                    const checkSl = parseFloat(slValStr);
+                    const tprValStr = document.getElementById('inp-risk-tp-realized').value;
+                    const tpuValStr = document.getElementById('inp-risk-tp-unrealized').value;
 
+                    logContainer.innerHTML = ''; 
+                    
                     if (!symbolStr) { showModal("ไม่สามารถเริ่มระบบได้", "กรุณาระบุ <b>Symbol</b> ให้ถูกต้อง", "error"); return; }
                     if (isNaN(upperVal) || isNaN(lowerVal)) { showModal("ไม่สามารถเริ่มระบบได้", "กรุณาระบุ <b>กรอบบนและกรอบล่าง</b> ให้ถูกต้องเป็นตัวเลข", "error"); return; }
                     if (upperVal <= lowerVal) { showModal("ไม่สามารถเริ่มระบบได้", "<b>กรอบบน</b> ต้องมีค่ามากกว่า <b>กรอบล่าง</b> เสมอ", "error"); return; }
                     if (isNaN(spacingVal) || spacingVal <= 0) { showModal("ไม่สามารถเริ่มระบบได้", "<b>ระยะกริด</b> ต้องเป็นตัวเลขและมากกว่า 0 เสมอ", "error"); return; }
                     if (isNaN(contractVal) || contractVal < 1) { showModal("ไม่สามารถเริ่มระบบได้", "<b>จำนวนสัญญา</b> ต้องเป็นจำนวนเต็มตั้งแต่ 1 ขึ้นไป", "error"); return; }
 
-                    const actValStr = document.getElementById('inp-risk-activation').value;
                     if (actValStr !== '' && isNaN(parseFloat(actValStr))) { showModal("ไม่สามารถเริ่มระบบได้", "<b>ราคาเริ่มทำงาน</b> ไม่ถูกต้อง", "error"); return; }
-                    
-                    const slValStr = document.getElementById('inp-risk-sl').value;
-                    const checkSl = parseFloat(slValStr);
                     if (slValStr !== '' && isNaN(checkSl)) { showModal("ไม่สามารถเริ่มระบบได้", "<b>ราคา Stop Loss</b> ไม่ถูกต้อง", "error"); return; }
-                    
-                    const tprValStr = document.getElementById('inp-risk-tp-realized').value;
                     if (tprValStr !== '' && isNaN(parseFloat(tprValStr))) { showModal("ไม่สามารถเริ่มระบบได้", "ค่า <b>หยุดระบบเมื่อ Realized</b> ไม่ถูกต้อง", "error"); return; }
-                    
-                    const tpuValStr = document.getElementById('inp-risk-tp-unrealized').value;
                     if (tpuValStr !== '' && isNaN(parseFloat(tpuValStr))) { showModal("ไม่สามารถเริ่มระบบได้", "ค่า <b>หยุดระบบเมื่อ Unrealized</b> ไม่ถูกต้อง", "error"); return; }
 
                     if (!isNaN(checkSl)) {
                         if (currentDirection === 'LONG' && checkSl >= lowerVal) {
-                            showModal("ตั้งค่า Stop Loss ไม่ถูกต้อง", `ในโหมด <b>LONG</b> ราคา Stop Loss (${checkSl}) ต้องตั้งไว้ <b>ต่ำกว่ากรอบล่าง</b> (${lowerVal})<br><br><span class="text-xs text-gray-500">เหตุผล: ในโหมด LONG คุณจะขาดทุนเมื่อราคาลง ดังนั้นจุดยอมแพ้ (SL) ต้องอยู่ใต้กรอบล่างสุด</span>`, "error");
+                            showModal("ตั้งค่า Stop Loss ไม่ถูกต้อง", `ในโหมด <b>LONG</b> ราคา Stop Loss (${checkSl}) ต้องตั้งไว้ <b>ต่ำกว่ากรอบล่าง</b> (${lowerVal})`, "error");
                             return;
                         }
                         if (currentDirection === 'SHORT' && checkSl <= upperVal) {
-                            showModal("ตั้งค่า Stop Loss ไม่ถูกต้อง", `ในโหมด <b>SHORT</b> ราคา Stop Loss (${checkSl}) ต้องตั้งไว้ <b>สูงกว่ากรอบบน</b> (${upperVal})<br><br><span class="text-xs text-gray-500">เหตุผล: ในโหมด SHORT คุณจะขาดทุนเมื่อราคาขึ้น ดังนั้นจุดยอมแพ้ (SL) ต้องอยู่เหนือกรอบบนสุด</span>`, "error");
+                            showModal("ตั้งค่า Stop Loss ไม่ถูกต้อง", `ในโหมด <b>SHORT</b> ราคา Stop Loss (${checkSl}) ต้องตั้งไว้ <b>สูงกว่ากรอบบน</b> (${upperVal})`, "error");
                             return;
                         }
                     }
@@ -1126,18 +1482,10 @@
                     upperLimit = upperVal;
                     lowerLimit = lowerVal;
                     gridSpacing = spacingVal;
-
-                    let actVal = parseFloat(actValStr);
-                    activationTarget = !isNaN(actVal) ? actVal : null;
+                    activationTarget = !isNaN(parseFloat(actValStr)) ? parseFloat(actValStr) : null;
                     stopLossTarget = !isNaN(checkSl) ? checkSl : null;
-                    let tprVal = parseFloat(tprValStr);
-                    targetRealized = !isNaN(tprVal) ? tprVal : null;
-                    let tpuVal = parseFloat(tpuValStr);
-                    targetUnrealized = !isNaN(tpuVal) ? tpuVal : null;
-                    
-                    currentPrice = parseFloat(((upperLimit + lowerLimit) / 2).toFixed(1)); 
-
-                    updateVisualGrid();
+                    targetRealized = !isNaN(parseFloat(tprValStr)) ? parseFloat(tprValStr) : null;
+                    targetUnrealized = !isNaN(parseFloat(tpuValStr)) ? parseFloat(tpuValStr) : null;
 
                     numGrids = Math.floor((upperLimit - lowerLimit) / gridSpacing) + 1;
                     pArr = new Float64Array(numGrids);
@@ -1152,89 +1500,173 @@
                     
                     realizedPNL = 0; totalComm = 0; activeCount = 0; sumEntry = 0; matchedCycles = 0;
                     currentUnrealizedPNL = 0; maxTotalPnL = 0; currentDrawdownTHB = 0; maxDrawdownTHB = 0;
-                    totalUptimeMs = 0; 
+                    totalUptimeMs = 0;
+                    lastProcessedMs = null; 
                     
-                    logContainer.innerHTML = ''; 
                     closedTradesHistory = [];
-                } else {
-                    logContainer.insertAdjacentHTML('beforeend', `<div class="text-yellow-400 mt-2">[${timeStr}] ▶️ BOT RE-STARTED. Resuming Grid Operations.</div>`);
-                    isResuming = false; 
+                    currentPrice = parseFloat(((upperLimit + lowerLimit) / 2).toFixed(1)); 
+                    updateVisualGrid();
                 }
 
-                botStartTime = Date.now();
-                document.getElementById('uptime-container').classList.remove('hidden');
-                document.getElementById('uptime-container').classList.add('flex');
-                uptimeInterval = setInterval(updateUptimeDisplay, 1000);
-                updateUptimeDisplay();
+                // --- 2. Startup Execution ---
+                const executeStartup = async (isInitialClick = false) => {
+                    if (isInitialClick) {
+                        btnStart.disabled = true;
+                        btnStart.innerHTML = '<i class="fa-solid fa-search mr-2"></i> RUNNING...';
+                        toggleSettingsLock(true);
+                        btnStop.classList.replace('bg-gray-200', 'bg-red-500');
+                        btnStop.classList.replace('text-gray-500', 'text-white');
+                        btnStop.classList.remove('cursor-not-allowed');
+                        btnStop.disabled = false;
+                        isBotRunning = true; 
 
-                btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START'; 
-                btnStart.className = "flex-1 bg-gray-200 text-gray-500 py-3 rounded-lg font-bold transition cursor-not-allowed";
-                btnStart.disabled = true;
-
-                btnStop.classList.replace('bg-gray-200', 'bg-red-500');
-                btnStop.classList.replace('text-gray-500', 'text-white');
-                btnStop.classList.add('hover:bg-red-600', 'shadow-lg', 'shadow-red-200', 'transform', 'hover:-translate-y-0.5');
-                btnStop.classList.remove('cursor-not-allowed');
-                btnStop.disabled = false;
-
-                statusBadge.textContent = "กำลังทำงาน";
-                statusBadge.className = "px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200 animate-pulse";
-
-                toggleSettingsLock(true);
-
-                if (!isBotRunning && !document.getElementById('new-logs').innerHTML.includes('RE-STARTED')) {
-                    let isBatchFill = document.getElementById('inp-adv-batch').checked;
-                    
-                    if (activationTarget !== null && !isNaN(activationTarget)) {
-                        isWaitingActivation = true;
-                        
-                        if (currentDirection === 'LONG' && activationTarget > currentPrice) {
-                            isWaitingActivation = false; 
-                        } else if (currentDirection === 'SHORT' && activationTarget < currentPrice) {
-                            isWaitingActivation = false; 
-                        } else if (activationTarget === currentPrice) {
-                            isWaitingActivation = false;
-                        } else {
-                            activationDirection = Math.sign(activationTarget - currentPrice);
+                        botStartTime = Date.now();
+                        const uptimeEl = document.getElementById('uptime-container');
+                        if (uptimeEl) {
+                            uptimeEl.classList.remove('hidden');
+                            uptimeEl.classList.add('flex');
                         }
-                        
-                        if (isWaitingActivation) {
-                            logContainer.innerHTML += `<div class="text-yellow-400 mt-2">[${timeStr}] BOT STANDBY. Waiting for price to cross @${activationTarget.toFixed(1)}</div>`;
-                        } else {
-                            logContainer.innerHTML += `<div class="text-green-400 mt-2">[${timeStr}] BOT STARTED in ${currentDirection} MODE. Grids initialized.</div>`;
+                        if (uptimeInterval) clearInterval(uptimeInterval);
+                        uptimeInterval = setInterval(updateUptimeDisplay, 1000);
+                        updateUptimeDisplay();
+
+                        if (autoSaveInterval) clearInterval(autoSaveInterval);
+                        autoSaveInterval = setInterval(executeAutoSave, 60000); 
+                    }
+
+                    const syncStatus = await syncToLatestData();
+
+                    if (syncStatus === 'ERROR') {
+                        forceStopBot("SYNC FAILED");
+                        showModal("เกิดข้อผิดพลาด", "ไม่สามารถดึงข้อมูลล่าสุดได้", "error");
+                        return;
+                    }
+
+                    // --- STATE: STANDBY ---
+                    if (syncStatus === 'STANDBY' || syncStatus === 'STANDBY_MARKET_CLOSED') {
+                        if (isInitialClick) { 
+                            btnStart.innerHTML = '<i class="fa-solid fa-search mr-2"></i> RUNNING...';
+                            statusBadge.textContent = "รอข้อมูลเข้าสู่ระบบ / STANDBY";
+                            statusBadge.className = "px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full border border-yellow-200 animate-pulse";
                             
-                            let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
-                            for (let i = numGrids - 1; i >= 0; i--) {
-                                let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
-                                addLog(action, pArr[i], contracts, null, timeStr);
+                            let simTimeStr = getCurrentTimeStr();
+                            addSystemLog(`[${simTimeStr}] SYSTEM STANDBY: ตลาดยังไม่เปิด หรือ รอรับข้อมูลตลาด…`, "text-yellow-400 font-bold mt-2");
+                            addSystemLog(`Waiting for data update...`, "text-cyan-400 font-mono mt-1");
+                            
+                            if (!marketWaitInterval) {
+                                marketWaitInterval = setInterval(async () => {
+                                    await executeStartup(false);
+                                }, 30000); 
                             }
-
-                            if (isBatchFill) executeBatchFill(currentPrice, timeStr);
                         }
-                    } else {
-                        isWaitingActivation = false;
-                        logContainer.innerHTML += `<div class="text-green-400 mt-2">[${timeStr}] BOT STARTED in ${currentDirection} MODE. Grids initialized.</div>`;
+                        return; 
+                    }
+
+                    // --- STATE: SUCCESS ---
+                    if (marketWaitInterval) {
+                        clearInterval(marketWaitInterval);
+                        marketWaitInterval = null;
+                        addSystemLog(`[${getCurrentTimeStr()}] ข้อมูลมาถึงเวลาปัจจุบันแล้ว! ตื่นจากโหมด Standby เริ่มต้นระบบ...`, "text-green-400 font-bold mt-2");
+                        addSystemLog(`Waiting for data update...`, "text-cyan-400 font-mono mt-1");
+                    }
+
+                    if (!isFreshStart && isInitialClick) {
+                        let resumeTimeStr = priceQueue.length > 0 ? priceQueue[0].t : getCurrentTimeStr();
+                        addSystemLog(`[${resumeTimeStr}] ▶️ BOT RE-STARTED. <br><span class="text-gray-400">Synced to latest price (@${currentPrice.toFixed(1)}). Missed ticks are ignored.</span>`, "text-yellow-400 mt-2");
                         
                         let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+                        let dirTxt = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SHORT';
+                        let dirColor = currentDirection === 'LONG' ? 'text-cyan-300' : 'text-pink-300';
                         for (let i = numGrids - 1; i >= 0; i--) {
-                            let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
-                            addLog(action, pArr[i], contracts, null, timeStr);
+                            if (activeArr[i] === 0) {
+                                // เช็คเงื่อนไขในการแสดง Log ค้างให้ถูกต้องเหมือนการเริ่มปกติ
+                                if (currentDirection === 'LONG' && pArr[i] <= currentPrice) {
+                                    addSystemLog(`[${resumeTimeStr}] ${dirTxt.padEnd(12)} | ${contracts} Con. | @${pArr[i].toFixed(1)}`, `${dirColor} text-[10px] lg:text-[11px]`);
+                                } else if (currentDirection === 'SHORT' && pArr[i] >= currentPrice) {
+                                    addSystemLog(`[${resumeTimeStr}] ${dirTxt.padEnd(12)} | ${contracts} Con. | @${pArr[i].toFixed(1)}`, `${dirColor} text-[10px] lg:text-[11px]`);
+                                }
+                            }
+                        }
+                    }
+
+                    btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START'; 
+                    btnStart.className = "flex-1 bg-gray-200 text-gray-500 py-3 rounded-lg font-bold transition cursor-not-allowed";
+                    btnStart.disabled = true;
+
+                    statusBadge.textContent = "กำลังทำงาน";
+                    statusBadge.className = "px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200 animate-pulse";
+
+                    let startTimeStr = priceQueue.length > 0 ? priceQueue[0].t : getCurrentTimeStr();
+
+                    if (isFreshStart) {
+                        let isBatchFill = document.getElementById('inp-adv-batch').checked;
+                        
+                        if (activationTarget !== null && !isNaN(activationTarget)) {
+                            isWaitingActivation = true;
+                            
+                            if (currentDirection === 'LONG') {
+                                if (activationTarget >= currentPrice) isWaitingActivation = false; 
+                                else activationDirection = -1; 
+                            } else { 
+                                if (activationTarget <= currentPrice) isWaitingActivation = false; 
+                                else activationDirection = 1; 
+                            }
+                            
+                            if (isWaitingActivation) {
+                                addSystemLog(`[${startTimeStr}] BOT STANDBY. Waiting for price to cross @${activationTarget.toFixed(1)}`, "text-yellow-400 mt-2");
+                            } else {
+                                startBotSequence(startTimeStr, isBatchFill, currentPrice);
+                            }
+                        } else {
+                            isWaitingActivation = false;
+                            startBotSequence(startTimeStr, isBatchFill, currentPrice);
                         }
 
-                        if (isBatchFill) executeBatchFill(currentPrice, timeStr);
+                        isFreshStart = false; 
                     }
-                }
 
-                calculateAndUpdateAll();
-                if (currentTab === 'history') renderOrderHistory();
+                    calculateAndUpdateAll();
+                    if (currentTab === 'history') renderOrderHistory();
 
-                isBotRunning = true;
-                priceInterval = setInterval(simulatePriceMovement, 2000);
-                
-                // บังคับ Auto-Save เสมอ ทุกๆ 1 นาที (60000ms) ขณะที่บอททำงาน
-                autoSaveInterval = setInterval(executeAutoSave, 60000);
+                    isResuming = false; 
+                    
+                    nextTickTime = Date.now() + 15000;
+                    
+                    const statusBar = document.getElementById('live-status-bar');
+                    if (statusBar) {
+                        statusBar.classList.remove('hidden');
+                        statusBar.classList.add('flex');
+                    }
+                    
+                    if (tickCountdownInterval) clearInterval(tickCountdownInterval);
+                    tickCountdownInterval = setInterval(updateTickCountdownUI, 1000);
+                    
+                    // (ยกเลิก Fast-Forward: ปล่อยให้บอททยอยเล่นข้อมูลย้อนหลังไปเรื่อยๆ ทีละ 15 วินาที ตามที่ต้องการ)
+                    if (priceQueue.length > 4) {
+                        addSystemLog(`[System] โหลดข้อมูลสำเร็จ! ข้อมูลจะอัพเดตรอบละ 15 วินาที...`, "text-yellow-400 font-bold mt-2");
+                    }
+
+                    if (dataPlayInterval) clearInterval(dataPlayInterval);
+                    dataPlayInterval = setInterval(() => {
+                        playNextTick();
+                        nextTickTime = Date.now() + 15000;
+                    }, 15000);
+
+                    playNextTick();
+
+                    if (dataPollInterval) clearInterval(dataPollInterval);
+                    dataPollInterval = setInterval(() => {
+                        pollForNewData();
+                    }, 30000);
+                };
+
+                // --- 3. Trigger การทำงาน ---
+                await executeStartup(true);
 
             } else {
+                // STOP LOGIC
+                let d = new Date();
+                let timeStr = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
                 btnStop.classList.replace('bg-red-500', 'bg-gray-200');
                 btnStop.classList.replace('text-white', 'text-gray-500');
                 btnStop.classList.remove('hover:bg-red-600', 'shadow-lg', 'shadow-red-200', 'transform', 'hover:-translate-y-0.5');
@@ -1251,29 +1683,66 @@
                 toggleSettingsLock(false);
                 document.getElementById('inp-adv-batch').checked = false;
 
-                logContainer.insertAdjacentHTML('beforeend', `<div class="text-red-400 mt-2">[${timeStr}] BOT HALTED. Stopped processing ticks.</div>`);
+                addSystemLog(`[${timeStr}] BOT HALTED. Stopped fetching new data.`, "text-red-400 mt-2");
                 
                 isBotRunning = false;
                 isResuming = false;
-                clearInterval(priceInterval);
-                clearInterval(uptimeInterval);
-                clearInterval(autoSaveInterval);
+                clearInterval(dataPlayInterval);
+                clearInterval(dataPollInterval);
+                if (tickCountdownInterval) clearInterval(tickCountdownInterval);
+                if (uptimeInterval) clearInterval(uptimeInterval);
+                if (autoSaveInterval) clearInterval(autoSaveInterval);
+                if (marketWaitInterval) {
+                    clearInterval(marketWaitInterval);
+                    marketWaitInterval = null;
+                }
                 
                 if (botStartTime) {
                     totalUptimeMs += (Date.now() - botStartTime);
                     botStartTime = null;
                 }
                 updateUptimeDisplay();
+
+                const statusBar = document.getElementById('live-status-bar');
+                if (statusBar) {
+                    statusBar.classList.add('hidden');
+                    statusBar.classList.remove('flex');
+                }
             }
             const scrollBox = document.getElementById('tab-activity');
             scrollBox.scrollTop = scrollBox.scrollHeight;
         }
 
         // --- Core Engine Logic ---
-        function simulatePriceMovement() {
-            const change = parseFloat((Math.random() * 6 - 3).toFixed(1));
-            let newPrice = parseFloat((currentPrice + change).toFixed(1));
+        function playNextTick() {
+            if (!isBotRunning) return;
             
+            if (priceQueue.length === 0) {
+                updateKPIs();
+                return;
+            }
+
+            // ถ้าระบบเปลี่ยนจาก STANDBY มาเป็น SUCCESS จะสลับกลับมาทำงานให้
+            if (document.getElementById('bot-status-badge').textContent === "STANDBY") {
+                const btnStart = document.getElementById('btn-start');
+                btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START'; 
+                btnStart.className = "flex-1 bg-gray-200 text-gray-500 py-3 rounded-lg font-bold transition cursor-not-allowed";
+                
+                const statusBadge = document.getElementById('bot-status-badge');
+                statusBadge.textContent = "กำลังทำงาน";
+                statusBadge.className = "px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200 animate-pulse";
+                
+                addSystemLog(`[${getCurrentTimeStr()}] ข้อมูลเข้าสู่ระบบแล้ว! บอทตื่นและเริ่มทำงานต่อ...`, "text-green-400 font-bold mt-2");
+                addSystemLog(`Waiting for data update...`, "text-cyan-400 font-mono mt-1");
+            }
+
+            let tickData = priceQueue.shift();
+            let newPrice = parseFloat(tickData.p.toFixed(1));
+            let timeStr = tickData.t;
+
+            // บันทึก Log การเปลี่ยนแปลงราคาทุกๆ 15 วินาที พร้อม Stamp เวลาจากข้อมูลจริง
+            addSystemLog(`[${timeStr}] Data Feed Price : ${newPrice.toFixed(1)}`, "text-slate-400");
+
             const trendIcon = document.getElementById('price-trend');
             trendIcon.className = newPrice >= currentPrice ? "fa-solid fa-caret-up text-green-500 text-md lg:text-lg ml-2" : "fa-solid fa-caret-down text-red-500 text-md lg:text-lg ml-2";
 
@@ -1281,7 +1750,16 @@
             let isLPR = document.getElementById('inp-adv-lpr').checked;
             let startP = currentPrice;
             let endP = newPrice;
-            let timeStr = new Date().toLocaleTimeString('en-GB', { hour12: false });
+
+            // ตรวจสอบช่องว่างเวลาเกิน 30 นาที (Dynamic Gap Detection)
+            let parsedTimeMs = tickData.timeMs;
+            let isGapTime = false;
+
+            if (lastTickTimeMs !== null) {
+                let diffMs = parsedTimeMs - lastTickTimeMs;
+                if (diffMs > 30 * 60 * 1000) isGapTime = true; 
+            }
+            lastTickTimeMs = parsedTimeMs;
 
             if (stopLossTarget !== null && !isNaN(stopLossTarget)) {
                 if ((currentDirection === 'LONG' && newPrice <= stopLossTarget) || 
@@ -1301,13 +1779,16 @@
 
                 if (triggered) {
                     isWaitingActivation = false;
-                    const logBox = document.getElementById('new-logs');
-                    logBox.insertAdjacentHTML('beforeend', `<div class="text-yellow-300">[${timeStr}] SYSTEM ACTIVATED @${newPrice.toFixed(1)}. Grids are now active.</div>`);
+                    addSystemLog(`[${timeStr}] SYSTEM ACTIVATED @${newPrice.toFixed(1)}. Grids are now active.`, "text-yellow-300");
                     
-                    let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+                    let dirTxt = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SHORT';
+                    let dirColor = currentDirection === 'LONG' ? 'text-cyan-300' : 'text-pink-300';
                     for (let i = numGrids - 1; i >= 0; i--) {
-                        let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
-                        addLog(action, pArr[i], contracts, null, timeStr);
+                        if (currentDirection === 'LONG' && pArr[i] <= newPrice) {
+                            addSystemLog(`[${timeStr}] ${dirTxt.padEnd(12)} | ${contracts} Con. | @${pArr[i].toFixed(1)}`, `${dirColor} text-[10px] lg:text-[11px]`);
+                        } else if (currentDirection === 'SHORT' && pArr[i] >= newPrice) {
+                            addSystemLog(`[${timeStr}] ${dirTxt.padEnd(12)} | ${contracts} Con. | @${pArr[i].toFixed(1)}`, `${dirColor} text-[10px] lg:text-[11px]`);
+                        }
                     }
 
                     let isBatchFill = document.getElementById('inp-adv-batch').checked;
@@ -1325,9 +1806,13 @@
                     let end = Math.min(numGrids - 1, Math.ceil((startP - lowerLimit) / gridSpacing) + 2);
                     for (let j = end; j >= start; j--) {
                         if (activeArr[j] === 0 && startP >= pArr[j] && endP <= pArr[j]) {
-                            activeArr[j] = 1; entryArr[j] = pArr[j]; activeCount++; sumEntry += pArr[j];
+                            
+                            let execPrice = pArr[j];
+                            if (tickData.isNewCandle && isGapTime) execPrice = endP; 
+
+                            activeArr[j] = 1; entryArr[j] = execPrice; activeCount++; sumEntry += execPrice;
                             const comm = commission * contracts; realizedPNL -= comm; totalComm += comm;
-                            addLog('BUY (OPEN)', pArr[j], contracts, null, timeStr);
+                            addLog(isGapTime ? 'BUY (GAP)' : 'BUY (OPEN)', execPrice, contracts, null, timeStr);
                         }
                     }
                 } else if (startP < endP) { 
@@ -1337,14 +1822,17 @@
                         if (activeArr[j] === 1 && startP <= tArr[j] && endP >= tArr[j]) {
                             if (isLPR && j === numGrids - 1) continue;
                             
+                            let execPrice = tArr[j];
+                            if (tickData.isNewCandle && isGapTime) execPrice = endP;
+
                             activeArr[j] = 0; activeCount--; sumEntry -= entryArr[j]; matchedCycles++;
                             const comm = commission * contracts; totalComm += comm;
-                            const grossPnl = (tArr[j] - entryArr[j]) * multiplier * contracts;
+                            const grossPnl = (execPrice - entryArr[j]) * multiplier * contracts;
                             const netPnl = grossPnl - (comm * 2);
                             realizedPNL += netPnl + comm; 
-                            addLog('SELL (CLOSE)', tArr[j], contracts, netPnl, timeStr);
+                            addLog(isGapTime ? 'SELL (GAP)' : 'SELL (CLOSE)', execPrice, contracts, netPnl, timeStr);
                             
-                            closedTradesHistory.push({ time: timeStr, action: 'LONG (CLOSE)', openPrice: entryArr[j], closePrice: tArr[j], pnl: netPnl });
+                            closedTradesHistory.push({ time: timeStr, action: isGapTime ? 'LONG (GAP)' : 'LONG (CLOSE)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
                             if (currentTab === 'history') renderOrderHistory();
                         }
                     }
@@ -1355,9 +1843,13 @@
                     let end = Math.min(numGrids - 1, Math.ceil((endP - lowerLimit) / gridSpacing) + 2);
                     for (let j = start; j <= end; j++) {
                         if (activeArr[j] === 0 && startP <= pArr[j] && endP >= pArr[j]) {
-                            activeArr[j] = 1; entryArr[j] = pArr[j]; activeCount++; sumEntry += pArr[j];
+                            
+                            let execPrice = pArr[j];
+                            if (tickData.isNewCandle && isGapTime) execPrice = endP;
+
+                            activeArr[j] = 1; entryArr[j] = execPrice; activeCount++; sumEntry += execPrice;
                             const comm = commission * contracts; realizedPNL -= comm; totalComm += comm;
-                            addLog('SELL (SHORT)', pArr[j], contracts, null, timeStr);
+                            addLog(isGapTime ? 'SHORT (GAP)' : 'SELL (SHORT)', execPrice, contracts, null, timeStr);
                         }
                     }
                 } else if (startP > endP) { 
@@ -1367,14 +1859,17 @@
                         if (activeArr[j] === 1 && startP >= tArr[j] && endP <= tArr[j]) {
                             if (isLPR && j === 0) continue;
 
+                            let execPrice = tArr[j];
+                            if (tickData.isNewCandle && isGapTime) execPrice = endP;
+
                             activeArr[j] = 0; activeCount--; sumEntry -= entryArr[j]; matchedCycles++;
                             const comm = commission * contracts; totalComm += comm;
-                            const grossPnl = (entryArr[j] - tArr[j]) * multiplier * contracts;
+                            const grossPnl = (entryArr[j] - execPrice) * multiplier * contracts;
                             const netPnl = grossPnl - (comm * 2);
                             realizedPNL += netPnl + comm;
-                            addLog('BUY (COVER)', tArr[j], contracts, netPnl, timeStr);
+                            addLog(isGapTime ? 'COVER (GAP)' : 'BUY (COVER)', execPrice, contracts, netPnl, timeStr);
                             
-                            closedTradesHistory.push({ time: timeStr, action: 'SHORT (COVER)', openPrice: entryArr[j], closePrice: tArr[j], pnl: netPnl });
+                            closedTradesHistory.push({ time: timeStr, action: isGapTime ? 'SHORT (GAP)' : 'SHORT (COVER)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
                             if (currentTab === 'history') renderOrderHistory();
                         }
                     }
@@ -1383,18 +1878,6 @@
 
             currentPrice = newPrice;
             calculateAndUpdateAll();
-
-            if (newPrice !== startP) {
-                const logBox = document.getElementById('new-logs');
-                logBox.insertAdjacentHTML('beforeend', `<div class="text-gray-400 mt-1 mb-2">[${timeStr}] Data Feed Price : ${newPrice.toFixed(1)}</div>`);
-                
-                while (logBox.children.length > 500) {
-                    logBox.removeChild(logBox.firstChild);
-                }
-                
-                const scrollBox = document.getElementById('tab-activity');
-                scrollBox.scrollTop = scrollBox.scrollHeight;
-            }
 
             if (targetRealized !== null && !isNaN(targetRealized) && realizedPNL >= targetRealized) {
                 forceStopBot(`REALIZED TARGET REACHED (+${realizedPNL.toFixed(2)})`);
