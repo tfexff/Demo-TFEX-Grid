@@ -430,6 +430,11 @@
                         clearInterval(intervals[e.data.id]);
                         delete intervals[e.data.id];
                     }
+                } else if (e.data.command === 'clearAll') {
+                    for (let id in intervals) {
+                        clearInterval(intervals[id]);
+                        delete intervals[id];
+                    }
                 }
             };
         `;
@@ -456,6 +461,13 @@
         function reliableClearInterval(id) {
             workerTimer.postMessage({ command: 'stop', id: id });
             delete workerCallbacks[id];
+        }
+
+        function clearAllWorkers() {
+            workerTimer.postMessage({ command: 'clearAll' });
+            for (let id in workerCallbacks) {
+                delete workerCallbacks[id];
+            }
         }
 
         // --- Silent Audio Play Request (Browser requirement) ---
@@ -528,7 +540,7 @@
         let totalUptimeMs = 0;
 
         // URL ใหม่ล่าสุดสำหรับดึงข้อมูล (GitHub Raw)
-        const DATA_FETCH_URL = 'https://raw.githubusercontent.com/tfexff/tfex-data/main/data/S501_1m_LATEST.csv';
+        const DATA_FETCH_URL = 'https://raw.githubusercontent.com/tfexff/tfex-data/refs/heads/main/data/Test_S501_1m_LATEST.csv';
 
         // --- Custom Modal / Message Box ---
         function showModal(title, message, type = 'error') {
@@ -731,51 +743,57 @@
             return new Date(year, month, day, hour, minute, second).getTime();
         }
 
+        // 🛡️ Data Parsing Validation Enhancement (try...catch + strict NaN)
         function parseCsvLine(line) {
-            let cols = line.split(',').map(c => c.trim());
-            if(cols.length < 5) return null;
-            
-            let o, h, l, c, dStr = "", tStr = "";
-            let found = false;
-            
-            for(let i = cols.length - 4; i >= 0; i--) {
-                let n1 = parseFloat(cols[i]); let n2 = parseFloat(cols[i+1]); let n3 = parseFloat(cols[i+2]); let n4 = parseFloat(cols[i+3]);
+            try {
+                let cols = line.split(',').map(c => c.trim());
+                if(cols.length < 5) return null;
                 
-                if(!isNaN(n1) && !isNaN(n2) && !isNaN(n3) && !isNaN(n4)) {
-                    let max = Math.max(n1, n2, n3, n4); let min = Math.min(n1, n2, n3, n4);
-                    if (max === n2 && min === n3) {
-                        o = n1; h = n2; l = n3; c = n4;
-                        if (i > 0) tStr = cols[i-1];
-                        if (i > 1) dStr = cols[i-2];
-                        found = true;
-                        break;
+                let o, h, l, c, dStr = "", tStr = "";
+                let found = false;
+                
+                for(let i = cols.length - 4; i >= 0; i--) {
+                    let n1 = parseFloat(cols[i]); let n2 = parseFloat(cols[i+1]); let n3 = parseFloat(cols[i+2]); let n4 = parseFloat(cols[i+3]);
+                    
+                    if(!isNaN(n1) && !isNaN(n2) && !isNaN(n3) && !isNaN(n4)) {
+                        let max = Math.max(n1, n2, n3, n4); let min = Math.min(n1, n2, n3, n4);
+                        if (max === n2 && min === n3) {
+                            o = n1; h = n2; l = n3; c = n4;
+                            if (i > 0) tStr = cols[i-1];
+                            if (i > 1) dStr = cols[i-2];
+                            found = true;
+                            break;
+                        }
                     }
                 }
-            }
-            
-            if (!found) {
-                let hasLetters = /[a-zA-Z]/.test(cols[0]);
-                let dIdx = hasLetters ? 1 : 0;
-                dStr = cols[dIdx];
-                tStr = cols[dIdx+1];
-                o = parseFloat(cols[dIdx+2]); h = parseFloat(cols[dIdx+3]); l = parseFloat(cols[dIdx+4]); c = parseFloat(cols[dIdx+5]);
-            }
-            
-            if(isNaN(o) || isNaN(h) || isNaN(l) || isNaN(c)) return null;
-            
-            let displayTime = tStr || "Live";
-            if(displayTime.length === 6 && !displayTime.includes(':') && !isNaN(displayTime)) {
-                displayTime = `${displayTime.slice(0,2)}:${displayTime.slice(2,4)}:${displayTime.slice(4,6)}`;
-            } else if (displayTime.length === 5 && displayTime.includes(':')) {
-                displayTime += ":00"; 
-            }
+                
+                if (!found) {
+                    let hasLetters = /[a-zA-Z]/.test(cols[0]);
+                    let dIdx = hasLetters ? 1 : 0;
+                    dStr = cols[dIdx];
+                    tStr = cols[dIdx+1];
+                    o = parseFloat(cols[dIdx+2]); h = parseFloat(cols[dIdx+3]); l = parseFloat(cols[dIdx+4]); c = parseFloat(cols[dIdx+5]);
+                }
+                
+                if(isNaN(o) || isNaN(h) || isNaN(l) || isNaN(c)) return null;
+                
+                let displayTime = tStr || "Live";
+                if(displayTime.length === 6 && !displayTime.includes(':') && !isNaN(displayTime)) {
+                    displayTime = `${displayTime.slice(0,2)}:${displayTime.slice(2,4)}:${displayTime.slice(4,6)}`;
+                } else if (displayTime.length === 5 && displayTime.includes(':')) {
+                    displayTime += ":00"; 
+                }
 
-            let timeMs = parseCsvDateTimeToMs(dStr, tStr);
+                let timeMs = parseCsvDateTimeToMs(dStr, tStr);
 
-            return {
-                timeKey: (dStr + "_" + tStr),
-                t: displayTime, timeMs: timeMs, o, h, l, c, rawLine: line
-            };
+                return {
+                    timeKey: (dStr + "_" + tStr),
+                    t: displayTime, timeMs: timeMs, o, h, l, c, rawLine: line
+                };
+            } catch (error) {
+                console.warn("Error parsing CSV line:", line, error);
+                return null; // ป้องกันบอทพังหากมีข้อมูลผิดรูป
+            }
         }
 
         function createTicksFromCandle(parsed) {
@@ -911,7 +929,7 @@
             }
         }
 
-        // --- Visual Grid Updater ---
+        // 🛡️ Divide by zero protection in Visual Grid Calculation
         function updateVisualGrid() {
             let upper = parseFloat(document.getElementById('inp-upper').value);
             let lower = parseFloat(document.getElementById('inp-lower').value);
@@ -923,6 +941,9 @@
             document.getElementById('vis-upper').innerText = upper.toFixed(1);
             document.getElementById('vis-lower').innerText = lower.toFixed(1);
 
+            let diff = upper - lower;
+            if (diff <= 0) diff = 0.1; // ป้องกันปัญหา Error การหารด้วยศูนย์
+
             const slMarker = document.getElementById('marker-sl');
             const slText = document.getElementById('vis-sl-text');
 
@@ -930,7 +951,7 @@
                 slMarker.style.display = 'block';
                 slText.innerText = sl.toFixed(1);
                 
-                let percentage = 10 + ((sl - lower) / (upper - lower)) * 80;
+                let percentage = 10 + ((sl - lower) / diff) * 80;
                 percentage = Math.max(0, Math.min(percentage, 100)); 
                 slMarker.style.left = `${percentage}%`;
             } else {
@@ -938,7 +959,7 @@
             }
             
             let priceIndicator = document.getElementById('price-indicator');
-            let percPrice = 10 + ((currentPrice - lower) / (upper - lower)) * 80;
+            let percPrice = 10 + ((currentPrice - lower) / diff) * 80;
             percPrice = Math.max(0, Math.min(percPrice, 100));
             priceIndicator.style.left = `${percPrice}%`;
         }
@@ -951,7 +972,11 @@
         document.getElementById('inp-upper').addEventListener('input', updateVisualGrid);
         document.getElementById('inp-lower').addEventListener('input', updateVisualGrid);
         document.getElementById('inp-risk-sl').addEventListener('input', updateVisualGrid);
-        document.getElementById('inp-symbol').addEventListener('input', updateNavTab); 
+        document.getElementById('inp-symbol').addEventListener('input', () => {
+            updateNavTab();
+            // Clear worker variables when symbol changes to prevent Ghost Intervals
+            if (!isBotRunning) clearAllWorkers();
+        }); 
         
         window.addEventListener('DOMContentLoaded', () => {
             updateNavTab();
@@ -1343,7 +1368,10 @@
 
             let visLower = parseFloat(document.getElementById('vis-lower').innerText);
             let visUpper = parseFloat(document.getElementById('vis-upper').innerText);
-            let percentage = 10 + ((currentPrice - visLower) / (visUpper - visLower)) * 80;
+            let diff = visUpper - visLower;
+            if (diff <= 0) diff = 0.1;
+
+            let percentage = 10 + ((currentPrice - visLower) / diff) * 80;
             percentage = Math.max(0, Math.min(percentage, 100)); 
             
             let priceIndicator = document.getElementById('price-indicator');
@@ -1358,42 +1386,75 @@
             if (currentTab === 'open') renderOpenOrders();
         }
 
+        // 🛡️ DRY - ลดความซ้ำซ้อนของโค้ดในการกางไม้
         function executeBatchFill(execPrice, timeStr) {
             let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
             let batchedCount = 0;
             
             for (let i = 0; i < numGrids; i++) {
-                if (currentDirection === 'LONG') {
-                    if (pArr[i] >= execPrice) {
-                        activeArr[i] = 1;
-                        entryArr[i] = execPrice;
-                        activeCount++;
-                        sumEntry += execPrice;
-                        let comm = commission * contracts;
-                        realizedPNL -= comm;
-                        totalComm += comm;
-                        
-                        addLog(`Match Buy (Target: ${tArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
-                        batchedCount++;
-                    }
-                } else {
-                    if (pArr[i] <= execPrice) {
-                        activeArr[i] = 1;
-                        entryArr[i] = execPrice;
-                        activeCount++;
-                        sumEntry += execPrice;
-                        let comm = commission * contracts;
-                        realizedPNL -= comm;
-                        totalComm += comm;
-                        
-                        addLog(`Match Sell (Target: ${tArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
-                        batchedCount++;
-                    }
+                let match = false;
+                if (currentDirection === 'LONG' && pArr[i] >= execPrice) match = true;
+                if (currentDirection === 'SHORT' && pArr[i] <= execPrice) match = true;
+
+                if (match && activeArr[i] === 0) { // ป้องกันการเปิดไม้ซ้ำ
+                    activeArr[i] = 1;
+                    entryArr[i] = execPrice;
+                    activeCount++;
+                    sumEntry += execPrice;
+                    let comm = commission * contracts;
+                    realizedPNL -= comm;
+                    totalComm += comm;
+                    
+                    let logStr = currentDirection === 'LONG' ? 'Match Buy' : 'Match Sell';
+                    addLog(`${logStr} (Target: ${tArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
+                    batchedCount++;
                 }
             }
             if (batchedCount > 0) {
                 calculateAndUpdateAll();
             }
+        }
+
+        // 🛡️ ระบบล้างพอร์ตทั้งหมดเมื่อชน SL หรือ TP
+        function liquidateAllPositions(exitPrice, reason) {
+            if (activeCount === 0) return;
+            
+            let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+            let timeStr = getCurrentTimeStr();
+            addSystemLog(`[${timeStr}] ⚠️ บังคับปิดทุกสถานะ (Liquidation) เนื่องจาก: ${reason}`, "text-yellow-400 font-bold mt-1");
+
+            for (let j = 0; j < numGrids; j++) {
+                if (activeArr[j] === 1) {
+                    activeArr[j] = 0;
+                    activeCount--;
+                    sumEntry -= entryArr[j];
+                    matchedCycles++;
+                    
+                    let comm = commission * contracts;
+                    totalComm += comm;
+                    
+                    let grossPnl = 0;
+                    if (currentDirection === 'LONG') {
+                        grossPnl = (exitPrice - entryArr[j]) * multiplier * contracts;
+                    } else {
+                        grossPnl = (entryArr[j] - exitPrice) * multiplier * contracts;
+                    }
+                    
+                    // ปัดเศษทศนิยมเพื่อความแม่นยำ 100%
+                    let netPnl = grossPnl - (comm * 2);
+                    netPnl = Math.round(netPnl * 100) / 100;
+                    
+                    realizedPNL += netPnl + comm; 
+                    
+                    let actionText = currentDirection === 'LONG' ? 'SELL (LIQ)' : 'BUY (LIQ)';
+                    addLog(actionText, exitPrice, contracts, netPnl, timeStr);
+                    
+                    closedTradesHistory.push({ time: timeStr, action: actionText, openPrice: entryArr[j], closePrice: exitPrice, pnl: netPnl });
+                }
+            }
+            
+            if (currentTab === 'history') renderOrderHistory();
+            calculateAndUpdateAll();
         }
 
         function forceStopBot(reason) {
@@ -1542,6 +1603,8 @@
                 }
 
                 const executeStartup = async (isInitialClick = false) => {
+                    let oldCurrentPrice = currentPrice; // Save old price before syncing
+
                     if (isInitialClick) {
                         btnStart.disabled = true;
                         btnStart.innerHTML = '<i class="fa-solid fa-search mr-2"></i> RUNNING...';
@@ -1603,10 +1666,79 @@
                         addSystemLog(`Waiting for data update...`, "text-cyan-400 font-mono mt-1");
                     }
 
-                    if (!isFreshStart && isInitialClick) {
+                    if (isResuming) {
                         let resumeTimeStr = priceQueue.length > 0 ? priceQueue[0].t : getCurrentTimeStr();
-                        addSystemLog(`[${resumeTimeStr}] ▶️ BOT RE-STARTED. <br><span class="text-gray-400">Synced to latest price (@${currentPrice.toFixed(1)}). Missed ticks are ignored.</span>`, "text-yellow-400 mt-2");
+                        let startP = oldCurrentPrice;
+                        let endP = currentPrice;
+
+                        addSystemLog(`[${resumeTimeStr}] ▶️ BOT RE-STARTED. <br><span class="text-gray-400">Synced to latest price (@${endP.toFixed(1)}). Checking for missed gap...</span>`, "text-yellow-400 mt-2");
                         
+                        if (startP !== endP && startP !== 0) {
+                            let batchedCount = 0;
+                            let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+                            let isLPR = document.getElementById('inp-adv-lpr').checked;
+                            
+                            let startIdx = Math.max(0, Math.floor((Math.min(startP, endP) - lowerLimit) / gridSpacing) - 2);
+                            let endIdx = Math.min(numGrids - 1, Math.ceil((Math.max(startP, endP) - lowerLimit) / gridSpacing) + 2);
+
+                            if (currentDirection === 'LONG') {
+                                if (startP > endP) { // Gap Down -> Buy
+                                    for (let j = endIdx; j >= startIdx; j--) {
+                                        if (activeArr[j] === 0 && startP >= pArr[j] && endP <= pArr[j]) {
+                                            let execPrice = endP;
+                                            activeArr[j] = 1; entryArr[j] = execPrice; activeCount++; sumEntry += execPrice;
+                                            const comm = commission * contracts; realizedPNL -= comm; totalComm += comm;
+                                            addLog('BUY (GAP RESTART)', execPrice, contracts, null, resumeTimeStr);
+                                            batchedCount++;
+                                        }
+                                    }
+                                } else if (startP < endP) { // Gap Up -> Sell
+                                    for (let j = startIdx; j <= endIdx; j++) {
+                                        if (activeArr[j] === 1 && startP <= tArr[j] && endP >= tArr[j]) {
+                                            if (isLPR && j === numGrids - 1) continue;
+                                            let execPrice = endP;
+                                            activeArr[j] = 0; activeCount--; sumEntry -= entryArr[j]; matchedCycles++;
+                                            const comm = commission * contracts; totalComm += comm;
+                                            const grossPnl = (execPrice - entryArr[j]) * multiplier * contracts;
+                                            let netPnl = Math.round((grossPnl - (comm * 2)) * 100) / 100;
+                                            realizedPNL += netPnl + comm; 
+                                            addLog('SELL (GAP RESTART)', execPrice, contracts, netPnl, resumeTimeStr);
+                                            closedTradesHistory.push({ time: resumeTimeStr, action: 'LONG (GAP RESTART)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
+                                            batchedCount++;
+                                        }
+                                    }
+                                }
+                            } else { // SHORT
+                                if (startP < endP) { // Gap Up -> Short
+                                    for (let j = startIdx; j <= endIdx; j++) {
+                                        if (activeArr[j] === 0 && startP <= pArr[j] && endP >= pArr[j]) {
+                                            let execPrice = endP;
+                                            activeArr[j] = 1; entryArr[j] = execPrice; activeCount++; sumEntry += execPrice;
+                                            const comm = commission * contracts; realizedPNL -= comm; totalComm += comm;
+                                            addLog('SHORT (GAP RESTART)', execPrice, contracts, null, resumeTimeStr);
+                                            batchedCount++;
+                                        }
+                                    }
+                                } else if (startP > endP) { // Gap Down -> Cover
+                                    for (let j = endIdx; j >= startIdx; j--) {
+                                        if (activeArr[j] === 1 && startP >= tArr[j] && endP <= tArr[j]) {
+                                            if (isLPR && j === 0) continue;
+                                            let execPrice = endP;
+                                            activeArr[j] = 0; activeCount--; sumEntry -= entryArr[j]; matchedCycles++;
+                                            const comm = commission * contracts; totalComm += comm;
+                                            const grossPnl = (entryArr[j] - execPrice) * multiplier * contracts;
+                                            let netPnl = Math.round((grossPnl - (comm * 2)) * 100) / 100;
+                                            realizedPNL += netPnl + comm;
+                                            addLog('COVER (GAP RESTART)', execPrice, contracts, netPnl, resumeTimeStr);
+                                            closedTradesHistory.push({ time: resumeTimeStr, action: 'SHORT (GAP RESTART)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
+                                            batchedCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            if (batchedCount > 0) calculateAndUpdateAll();
+                        }
+
                         let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
                         let dirTxt = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SHORT';
                         let dirColor = currentDirection === 'LONG' ? 'text-cyan-300' : 'text-pink-300';
@@ -1781,21 +1913,18 @@
             let startP = currentPrice;
             let endP = newPrice;
 
-            let parsedTimeMs = tickData.timeMs;
-            let isGapTime = false;
+            lastTickTimeMs = tickData.timeMs;
 
-            if (lastTickTimeMs !== null) {
-                let diffMs = parsedTimeMs - lastTickTimeMs;
-                if (diffMs > 30 * 60 * 1000) isGapTime = true; 
-            }
-            lastTickTimeMs = parsedTimeMs;
+            // 🛡️ Gap Logic: ตรวจจับราคาเปิดกระโดด (Price Gap) ข้ามไม้ Pending
+            // หากเป็นสถานะ 'Open' ของแท่งเทียนใหม่ แปลว่าราคากระโดดจาก Close แท่งก่อนโดยไม่วิ่งผ่านราคาตรงกลาง
+            let isGap = (tickData.phase === 'Open');
 
+            // 🛡️ SL Liquidation
             if (stopLossTarget !== null && !isNaN(stopLossTarget)) {
                 if ((currentDirection === 'LONG' && newPrice <= stopLossTarget) || 
                     (currentDirection === 'SHORT' && newPrice >= stopLossTarget)) {
                     currentPrice = newPrice;
-                    addLog('STOP LOSS', newPrice, 0, null, timeStr);
-                    calculateAndUpdateAll();
+                    liquidateAllPositions(newPrice, 'STOP LOSS HIT');
                     forceStopBot(`STOP LOSS HIT @${newPrice.toFixed(1)}`);
                     return;
                 }
@@ -1829,76 +1958,80 @@
                 }
             }
 
+            // 🛡️ Index Out of Bounds Safeguard
+            let startIdx = Math.max(0, Math.floor((Math.min(startP, endP) - lowerLimit) / gridSpacing) - 2);
+            let endIdx = Math.min(numGrids - 1, Math.ceil((Math.max(startP, endP) - lowerLimit) / gridSpacing) + 2);
+
             if (currentDirection === 'LONG') {
                 if (startP > endP) { 
-                    let start = Math.max(0, Math.floor((endP - lowerLimit) / gridSpacing) - 2);
-                    let end = Math.min(numGrids - 1, Math.ceil((startP - lowerLimit) / gridSpacing) + 2);
-                    for (let j = end; j >= start; j--) {
+                    for (let j = endIdx; j >= startIdx; j--) {
                         if (activeArr[j] === 0 && startP >= pArr[j] && endP <= pArr[j]) {
                             
                             let execPrice = pArr[j];
-                            if (tickData.isNewCandle && isGapTime) execPrice = endP; 
+                            if (isGap) execPrice = endP; // แมทช์ที่ราคาเปิด Gap ล่าสุด
 
                             activeArr[j] = 1; entryArr[j] = execPrice; activeCount++; sumEntry += execPrice;
                             const comm = commission * contracts; realizedPNL -= comm; totalComm += comm;
-                            addLog(isGapTime ? 'BUY (GAP)' : 'BUY (OPEN)', execPrice, contracts, null, timeStr);
+                            addLog(isGap ? 'BUY (GAP)' : 'BUY (OPEN)', execPrice, contracts, null, timeStr);
                         }
                     }
                 } else if (startP < endP) { 
-                    let start = Math.max(0, Math.floor((startP - lowerLimit) / gridSpacing) - 2);
-                    let end = Math.min(numGrids - 1, Math.ceil((endP - lowerLimit) / gridSpacing) + 2);
-                    for (let j = start; j <= end; j++) {
+                    for (let j = startIdx; j <= endIdx; j++) {
                         if (activeArr[j] === 1 && startP <= tArr[j] && endP >= tArr[j]) {
                             if (isLPR && j === numGrids - 1) continue;
                             
                             let execPrice = tArr[j];
-                            if (tickData.isNewCandle && isGapTime) execPrice = endP;
+                            if (isGap) execPrice = endP; // แมทช์ที่ราคาเปิด Gap ล่าสุด
 
                             activeArr[j] = 0; activeCount--; sumEntry -= entryArr[j]; matchedCycles++;
                             const comm = commission * contracts; totalComm += comm;
                             const grossPnl = (execPrice - entryArr[j]) * multiplier * contracts;
-                            const netPnl = grossPnl - (comm * 2);
-                            realizedPNL += netPnl + comm; 
-                            addLog(isGapTime ? 'SELL (GAP)' : 'SELL (CLOSE)', execPrice, contracts, netPnl, timeStr);
                             
-                            closedTradesHistory.push({ time: timeStr, action: isGapTime ? 'LONG (GAP)' : 'LONG (CLOSE)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
+                            // 🛡️ Floating Point Precision
+                            let netPnl = grossPnl - (comm * 2);
+                            netPnl = Math.round(netPnl * 100) / 100;
+                            
+                            realizedPNL += netPnl + comm; 
+                            addLog(isGap ? 'SELL (GAP)' : 'SELL (CLOSE)', execPrice, contracts, netPnl, timeStr);
+                            
+                            closedTradesHistory.push({ time: timeStr, action: isGap ? 'LONG (GAP)' : 'LONG (CLOSE)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
                             if (currentTab === 'history') renderOrderHistory();
                         }
                     }
                 }
             } else {
                 if (startP < endP) { 
-                    let start = Math.max(0, Math.floor((startP - lowerLimit) / gridSpacing) - 2);
-                    let end = Math.min(numGrids - 1, Math.ceil((endP - lowerLimit) / gridSpacing) + 2);
-                    for (let j = start; j <= end; j++) {
+                    for (let j = startIdx; j <= endIdx; j++) {
                         if (activeArr[j] === 0 && startP <= pArr[j] && endP >= pArr[j]) {
                             
                             let execPrice = pArr[j];
-                            if (tickData.isNewCandle && isGapTime) execPrice = endP;
+                            if (isGap) execPrice = endP; // แมทช์ที่ราคาเปิด Gap ล่าสุด
 
                             activeArr[j] = 1; entryArr[j] = execPrice; activeCount++; sumEntry += execPrice;
                             const comm = commission * contracts; realizedPNL -= comm; totalComm += comm;
-                            addLog(isGapTime ? 'SHORT (GAP)' : 'SELL (SHORT)', execPrice, contracts, null, timeStr);
+                            addLog(isGap ? 'SHORT (GAP)' : 'SELL (SHORT)', execPrice, contracts, null, timeStr);
                         }
                     }
                 } else if (startP > endP) { 
-                    let start = Math.max(0, Math.floor((endP - lowerLimit) / gridSpacing) - 2);
-                    let end = Math.min(numGrids - 1, Math.ceil((startP - lowerLimit) / gridSpacing) + 2);
-                    for (let j = end; j >= start; j--) {
+                    for (let j = endIdx; j >= startIdx; j--) {
                         if (activeArr[j] === 1 && startP >= tArr[j] && endP <= tArr[j]) {
                             if (isLPR && j === 0) continue;
 
                             let execPrice = tArr[j];
-                            if (tickData.isNewCandle && isGapTime) execPrice = endP;
+                            if (isGap) execPrice = endP; // แมทช์ที่ราคาเปิด Gap ล่าสุด
 
                             activeArr[j] = 0; activeCount--; sumEntry -= entryArr[j]; matchedCycles++;
                             const comm = commission * contracts; totalComm += comm;
                             const grossPnl = (entryArr[j] - execPrice) * multiplier * contracts;
-                            const netPnl = grossPnl - (comm * 2);
-                            realizedPNL += netPnl + comm;
-                            addLog(isGapTime ? 'COVER (GAP)' : 'BUY (COVER)', execPrice, contracts, netPnl, timeStr);
                             
-                            closedTradesHistory.push({ time: timeStr, action: isGapTime ? 'SHORT (GAP)' : 'SHORT (COVER)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
+                            // 🛡️ Floating Point Precision
+                            let netPnl = grossPnl - (comm * 2);
+                            netPnl = Math.round(netPnl * 100) / 100;
+                            
+                            realizedPNL += netPnl + comm;
+                            addLog(isGap ? 'COVER (GAP)' : 'BUY (COVER)', execPrice, contracts, netPnl, timeStr);
+                            
+                            closedTradesHistory.push({ time: timeStr, action: isGap ? 'SHORT (GAP)' : 'SHORT (COVER)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
                             if (currentTab === 'history') renderOrderHistory();
                         }
                     }
@@ -1908,16 +2041,20 @@
             currentPrice = newPrice;
             calculateAndUpdateAll();
 
+            // 🛡️ TP Liquidation
             if (targetRealized !== null && !isNaN(targetRealized) && realizedPNL >= targetRealized) {
+                liquidateAllPositions(currentPrice, 'REALIZED TARGET REACHED');
                 forceStopBot(`REALIZED TARGET REACHED (+${realizedPNL.toFixed(2)})`);
                 return;
             }
 
             if (targetUnrealized !== null && !isNaN(targetUnrealized)) {
                 if (targetUnrealized > 0 && currentUnrealizedPNL >= targetUnrealized) {
+                    liquidateAllPositions(currentPrice, 'UNREALIZED TARGET REACHED');
                     forceStopBot(`UNREALIZED TARGET REACHED (+${currentUnrealizedPNL.toFixed(2)})`);
                     return;
                 } else if (targetUnrealized < 0 && currentUnrealizedPNL <= targetUnrealized) {
+                    liquidateAllPositions(currentPrice, 'UNREALIZED STOP HIT');
                     forceStopBot(`UNREALIZED STOP HIT (${currentUnrealizedPNL.toFixed(2)})`);
                     return;
                 }
