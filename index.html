@@ -346,7 +346,7 @@
                         <i class="fa-solid fa-briefcase mr-1 lg:mr-2"></i>Open Orders (<span id="tab-open-count">0</span>)
                     </button>
                     <button id="tab-btn-history" onclick="switchTab('history')" class="px-4 lg:px-6 py-2 lg:py-3 text-[11px] lg:text-sm font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition">
-                        <i class="fa-solid fa-clock-rotate-left mr-1 lg:mr-2"></i>Order History
+                        <i class="fa-solid fa-clock-rotate-left mr-1 lg:mr-2"></i>Order History (<span id="tab-history-count">0</span>)
                     </button>
                 </div>
                 
@@ -411,7 +411,61 @@
     <!-- Input แบบซ่อนสำหรับโหลดไฟล์ Save -->
     <input type="file" id="file-loader" class="hidden" accept=".txt" onchange="handleFileLoad(event)">
 
+    <!-- Silent Audio for Background execution Hack -->
+    <audio id="dummy-audio" loop autoplay muted playsinline>
+        <source src="data:audio/mp3;base64,//OwgAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA//////////////////////////////////////////////////////////////////8AAABhTEFNRTMuMTAwA8sAAAAALgAAABgJAxQCAgAAgAAAIgIAJwwAAAACAEAAIAAAAAAAAAQBAwAEQQMAAABRAQAAAAAAAAAAAA==" type="audio/mpeg">
+    </audio>
+
     <script>
+        // --- Web Worker Timer Hack (Anti-Sleep) ---
+        const timerWorkerCode = `
+            let intervals = {};
+            self.onmessage = function(e) {
+                if (e.data.command === 'start') {
+                    intervals[e.data.id] = setInterval(() => {
+                        self.postMessage({ id: e.data.id });
+                    }, e.data.delay);
+                } else if (e.data.command === 'stop') {
+                    if (intervals[e.data.id]) {
+                        clearInterval(intervals[e.data.id]);
+                        delete intervals[e.data.id];
+                    }
+                }
+            };
+        `;
+        const blob = new Blob([timerWorkerCode], { type: 'application/javascript' });
+        const workerTimer = new Worker(URL.createObjectURL(blob));
+
+        const workerCallbacks = {};
+        workerTimer.addEventListener('message', function(e) {
+            if (workerCallbacks[e.data.id]) {
+                workerCallbacks[e.data.id]();
+            }
+        });
+
+        function reliableSetInterval(callback, delay, id) {
+            // Memory Leak Fix: Clear existing interval inside worker before starting a new one with same ID
+            if (workerCallbacks[id]) {
+                reliableClearInterval(id);
+            }
+            workerCallbacks[id] = callback;
+            workerTimer.postMessage({ command: 'start', delay: delay, id: id });
+            return id;
+        }
+
+        function reliableClearInterval(id) {
+            workerTimer.postMessage({ command: 'stop', id: id });
+            delete workerCallbacks[id];
+        }
+
+        // --- Silent Audio Play Request (Browser requirement) ---
+        document.body.addEventListener('click', function() {
+            let audio = document.getElementById('dummy-audio');
+            if (audio && audio.paused) {
+                audio.play().catch(e => console.log("Audio play prevented: ", e));
+            }
+        }, { once: true });
+
         // --- System Core Logic & State ---
         const capital = 500000;
         const multiplier = 200;
@@ -459,18 +513,19 @@
         let priceQueue = []; 
         let lastSeenTimeKey = null; 
         let lastProcessedMs = null; 
-        let lastTickTimeMs = null; // ตัวแปรสำหรับ Dynamic Gap Detection
+        let lastTickTimeMs = null; 
+        
         let dataPlayInterval = null; 
         let dataPollInterval = null;
         let tickCountdownInterval = null;
-        let nextTickTime = 0;
-        
-        // Time, Uptime Tracker & AutoSave Variables
-        let botStartTime = null;
-        let totalUptimeMs = 0;
         let uptimeInterval = null;
         let autoSaveInterval = null;
         let marketWaitInterval = null; 
+        let nextTickTime = 0;
+        
+        // Time, Uptime Tracker
+        let botStartTime = null;
+        let totalUptimeMs = 0;
 
         // URL ใหม่ล่าสุดสำหรับดึงข้อมูล (GitHub Raw)
         const DATA_FETCH_URL = 'https://raw.githubusercontent.com/tfexff/tfex-data/main/data/S501_1m_LATEST.csv';
@@ -571,7 +626,6 @@
             scrollBox.scrollTop = scrollBox.scrollHeight;
         }
 
-        // --- Helper Function: ดึงเวลาปัจจุบัน ---
         function getCurrentTimeMs() {
             return Date.now();
         }
@@ -580,7 +634,6 @@
             return formatTimeFromMs(getCurrentTimeMs());
         }
 
-        // แปลง Timestamp (ms) เป็น String (HH:MM:SS) เพื่อใช้แสดงใน Log
         function formatTimeFromMs(ms) {
             let d = new Date(ms);
             let h = String(d.getHours()).padStart(2, '0');
@@ -598,7 +651,7 @@
             const timeStr = now.toLocaleTimeString('en-GB', timeOptions);
             document.getElementById('live-time').innerText = `${dateStr} ${timeStr}`;
         }
-        setInterval(updateClock, 1000);
+        reliableSetInterval(updateClock, 1000, 'clockInterval');
         updateClock();
 
         function updateUptimeDisplay() {
@@ -635,7 +688,6 @@
             statusBar.classList.remove('hidden');
             statusBar.classList.add('flex');
 
-            // ตรวจจับสถานะการ Standby เบื้องหลัง เมื่อคิวว่างและข้อมูลล่าสุดเก่าเกิน 30 นาที (อัปเดตใหม่)
             if (priceQueue.length === 0) {
                 let nowMs = getCurrentTimeMs();
                 if (!lastProcessedMs || (nowMs - lastProcessedMs > 30 * 60 * 1000)) {
@@ -651,7 +703,6 @@
             statusBadge.className = "px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200 animate-pulse";
         }
 
-        // --- Helper Function: แปลงวันที่และเวลาใน CSV ให้เป็นมิลลิวินาที (Unix Timestamp) ที่แม่นยำ ---
         function parseCsvDateTimeToMs(dStr, tStr) {
             if (!dStr || !tStr) return 0;
             
@@ -680,7 +731,6 @@
             return new Date(year, month, day, hour, minute, second).getTime();
         }
 
-        // --- Data Parser Engine (Robust) ---
         function parseCsvLine(line) {
             let cols = line.split(',').map(c => c.trim());
             if(cols.length < 5) return null;
@@ -747,7 +797,7 @@
             return newTicks;
         }
 
-        // --- Sync Data Engine (แก้ไขให้ดึงข้อมูลอ้างอิง Real-Time ล่าสุด) ---
+        // --- Sync Data Engine ---
         async function syncToLatestData() {
             const url = DATA_FETCH_URL + '?t=' + Date.now();
             try {
@@ -757,11 +807,10 @@
                 const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
                 let nowMs = getCurrentTimeMs(); 
-                let cutoffMs = nowMs - (20 * 60 * 1000); // กำหนดเวลาดึงข้อมูลย้อนหลัง 20 นาทีตามที่ต้องการ
-                let futureToleranceMs = nowMs + (5 * 60 * 1000); // เผื่อเวลา Server เร็วกว่าเครื่อง 5 นาที
+                let cutoffMs = nowMs - (20 * 60 * 1000); 
+                let futureToleranceMs = nowMs + (5 * 60 * 1000); 
                 let validLines = [];
 
-                // สแกนย้อนหลังจากบรรทัดสุดท้าย
                 let startIdx = Math.max(0, lines.length - 100);
                 for(let i = lines.length - 1; i >= startIdx; i--) {
                     let parsed = parseCsvLine(lines[i]);
@@ -779,7 +828,6 @@
                 let latestValid = validLines[validLines.length - 1];
                 let diffMs = nowMs - latestValid.timeMs;
 
-                // ถ้าราคาล่าสุดที่ใช้ได้ มันเก่าเกิน 30 นาที แปลว่าตลาดปิด หรือข้อมูลยังไม่มา
                 if (diffMs > 30 * 60 * 1000) {
                     currentPrice = parseFloat(latestValid.c.toFixed(1));
                     lastSeenTimeKey = latestValid.timeKey;
@@ -787,15 +835,12 @@
                     return 'STANDBY_MARKET_CLOSED';
                 }
 
-                // นำข้อมูลทั้งหมดในกรอบเวลา (หลายบรรทัด) มาสร้างเป็น Ticks จำลองการแกว่งตัว
                 let foundRows = validLines; 
 
                 let ticks = [];
                 for (let r of foundRows) {
                     lastSeenTimeKey = r.timeKey;
                     lastProcessedMs = r.timeMs;
-                    // ซ่อนข้อความ Log สีม่วง (Datafeed SYNC)
-                    // addSystemLog(`[Datafeed] SYNC: ${r.rawLine}`, "text-purple-400 text-[10px]");
                     ticks.push(...createTicksFromCandle(r));
                 }
 
@@ -809,7 +854,6 @@
             }
         }
 
-        // ระบบหลังบ้านคอยไปเคาะถามไฟล์ว่ามีบรรทัดใหม่หรือไม่ (ยึดเวลา Real-Time)
         async function pollForNewData() {
             if (!isBotRunning) return;
             const url = DATA_FETCH_URL + '?t=' + Date.now();
@@ -823,7 +867,7 @@
                 let found = false;
                 let maxScan = Math.max(0, lines.length - 60); 
                 let nowMs = getCurrentTimeMs(); 
-                let cutoffMs = nowMs - (40 * 60 * 1000); // ขยายเป็น 40 นาทีเช่นเดียวกัน
+                let cutoffMs = nowMs - (40 * 60 * 1000); 
                 let futureToleranceMs = nowMs + (5 * 60 * 1000);
                 
                 for(let i = lines.length - 1; i >= maxScan; i--) {
@@ -840,7 +884,6 @@
                     }
                 }
 
-                // กรณีเน็ตหลุดนานหรือข้ามวันจนหา key เก่าไม่เจอ ให้กู้ข้อมูลอัตโนมัติ
                 if (!found && lines.length > 0) {
                      newRows = [];
                      for(let i = lines.length - 1; i >= maxScan; i--) {
@@ -859,8 +902,6 @@
                     for(let r of newRows) {
                         lastSeenTimeKey = r.timeKey;
                         lastProcessedMs = r.timeMs;
-                        // ซ่อนข้อความ Log สีม่วง (Datafeed UPDATE)
-                        // addSystemLog(`[Datafeed] UPDATE: ${r.rawLine}`, "text-purple-400 text-[10px]");
                         newTicks.push(...createTicksFromCandle(r));
                     }
                     priceQueue.push(...newTicks);
@@ -902,7 +943,6 @@
             priceIndicator.style.left = `${percPrice}%`;
         }
 
-        // ฟังก์ชันอัปเดตชื่อแท็บด้านบน
         function updateNavTab() {
             const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
             document.getElementById('nav-tab-symbol').innerText = `${symbol}_${currentDirection}`;
@@ -989,7 +1029,6 @@
             }
         }
 
-        // --- System Data Extractor ---
         function getSystemStateObj() {
             const currentUptimeToSave = totalUptimeMs + (isBotRunning && botStartTime ? Date.now() - botStartTime : 0);
             return {
@@ -1028,7 +1067,6 @@
             };
         }
 
-        // --- Auto Save & Export Features ---
         function exportSaveFile() {
             if (isBotRunning) {
                 showModal("แจ้งเตือน", "โปรดกด <b>STOP</b> บอทก่อนทำการบันทึกข้อมูลแบบ Manual ครับ", "warning");
@@ -1059,19 +1097,11 @@
 
         function executeAutoSave() {
             if (!isBotRunning) return;
-            
             const saveData = getSystemStateObj();
             const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
-            
             localStorage.setItem(`TFF_AutoSave_${symbol}`, JSON.stringify(saveData));
-
-            let d = new Date();
-            let timeStr = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
-            // ซ่อนข้อความแจ้งเตือน Auto-Save
-            // addSystemLog(`[${timeStr}] 💾 Auto-Saved  Symbol ${symbol}`, "text-blue-400 mt-1 mb-2");
         }
 
-        // --- Data Restoration ---
         function applySaveData(saveData) {
             document.getElementById('inp-symbol').value = saveData.inputs.symbol || '';
             document.getElementById('inp-upper').value = saveData.inputs.upper || '';
@@ -1179,7 +1209,6 @@
             event.target.value = ''; 
         }
 
-        // --- Tabs / Table Updates ---
         function switchTab(tabId) {
             currentTab = tabId;
             const tabs = ['activity', 'open', 'history'];
@@ -1303,6 +1332,9 @@
             let avgCost = activeCount > 0 ? (sumEntry / activeCount).toFixed(1) : '0.0';
             document.getElementById('kpi-avg').innerText = `ทุนเฉลี่ย: ${avgCost}`;
             document.getElementById('tab-open-count').innerText = activeCount; 
+            
+            // อัปเดตสถิติยอดไม้ที่ปิดทำกำไรได้สำเร็จหลังชื่อหัวข้อ Tab Order History
+            document.getElementById('tab-history-count').innerText = closedTradesHistory.length;
 
             let unrealizedColor = currentUnrealizedPNL >= 0 ? 'text-emerald-600' : 'text-red-600';
             document.getElementById('kpi-unrealized').innerHTML = `<span class="${unrealizedColor}">${currentUnrealizedPNL >= 0 ? '+' : ''}฿${currentUnrealizedPNL.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>`;
@@ -1326,7 +1358,6 @@
             if (currentTab === 'open') renderOpenOrders();
         }
 
-        // --- Batch Fill Logic ---
         function executeBatchFill(execPrice, timeStr) {
             let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
             let batchedCount = 0;
@@ -1371,13 +1402,15 @@
             addSystemLog(`[${timeStr}] SYSTEM HALTED: ${reason}`, "text-red-400 font-bold mt-2");
             
             isBotRunning = false;
-            clearInterval(dataPlayInterval);
-            clearInterval(dataPollInterval);
-            if (tickCountdownInterval) clearInterval(tickCountdownInterval);
-            if (uptimeInterval) clearInterval(uptimeInterval);
-            if (autoSaveInterval) clearInterval(autoSaveInterval);
+            
+            // Clean up ALL intervals using the reliable Web Worker clearer
+            if (dataPlayInterval) reliableClearInterval(dataPlayInterval);
+            if (dataPollInterval) reliableClearInterval(dataPollInterval);
+            if (tickCountdownInterval) reliableClearInterval(tickCountdownInterval);
+            if (uptimeInterval) reliableClearInterval(uptimeInterval);
+            if (autoSaveInterval) reliableClearInterval(autoSaveInterval);
             if (marketWaitInterval) {
-                clearInterval(marketWaitInterval);
+                reliableClearInterval(marketWaitInterval);
                 marketWaitInterval = null;
             }
             
@@ -1442,7 +1475,6 @@
                 const logContainer = document.getElementById('new-logs');
                 let isFreshStart = !isResuming; 
 
-                // --- 1. Validation Phase & Grid Initialization ---
                 if (isFreshStart) {
                     const symbolStr = document.getElementById('inp-symbol').value.trim();
                     const upperVal = parseFloat(document.getElementById('inp-upper').value);
@@ -1493,9 +1525,10 @@
                     activeArr = new Uint8Array(numGrids);
                     entryArr = new Float64Array(numGrids);
                     
+                    // ป้องกันความผิดพลาดจากการคำนวณทศนิยมด้วย .toFixed(4)
                     for (let i = 0; i < numGrids; i++) {
-                        pArr[i] = lowerLimit + (i * gridSpacing);
-                        tArr[i] = currentDirection === 'LONG' ? pArr[i] + gridSpacing : pArr[i] - gridSpacing;
+                        pArr[i] = parseFloat((lowerLimit + (i * gridSpacing)).toFixed(4));
+                        tArr[i] = currentDirection === 'LONG' ? parseFloat((pArr[i] + gridSpacing).toFixed(4)) : parseFloat((pArr[i] - gridSpacing).toFixed(4));
                     }
                     
                     realizedPNL = 0; totalComm = 0; activeCount = 0; sumEntry = 0; matchedCycles = 0;
@@ -1508,7 +1541,6 @@
                     updateVisualGrid();
                 }
 
-                // --- 2. Startup Execution ---
                 const executeStartup = async (isInitialClick = false) => {
                     if (isInitialClick) {
                         btnStart.disabled = true;
@@ -1526,12 +1558,13 @@
                             uptimeEl.classList.remove('hidden');
                             uptimeEl.classList.add('flex');
                         }
-                        if (uptimeInterval) clearInterval(uptimeInterval);
-                        uptimeInterval = setInterval(updateUptimeDisplay, 1000);
+                        
+                        if (uptimeInterval) reliableClearInterval(uptimeInterval);
+                        uptimeInterval = reliableSetInterval(updateUptimeDisplay, 1000, 'uptimeInterval');
                         updateUptimeDisplay();
 
-                        if (autoSaveInterval) clearInterval(autoSaveInterval);
-                        autoSaveInterval = setInterval(executeAutoSave, 60000); 
+                        if (autoSaveInterval) reliableClearInterval(autoSaveInterval);
+                        autoSaveInterval = reliableSetInterval(executeAutoSave, 60000, 'autoSaveInterval'); 
                     }
 
                     const syncStatus = await syncToLatestData();
@@ -1554,9 +1587,9 @@
                             addSystemLog(`Waiting for data update...`, "text-cyan-400 font-mono mt-1");
                             
                             if (!marketWaitInterval) {
-                                marketWaitInterval = setInterval(async () => {
+                                marketWaitInterval = reliableSetInterval(async () => {
                                     await executeStartup(false);
-                                }, 30000); 
+                                }, 30000, 'marketWaitInterval'); 
                             }
                         }
                         return; 
@@ -1564,7 +1597,7 @@
 
                     // --- STATE: SUCCESS ---
                     if (marketWaitInterval) {
-                        clearInterval(marketWaitInterval);
+                        reliableClearInterval(marketWaitInterval);
                         marketWaitInterval = null;
                         addSystemLog(`[${getCurrentTimeStr()}] ข้อมูลมาถึงเวลาปัจจุบันแล้ว! ตื่นจากโหมด Standby เริ่มต้นระบบ...`, "text-green-400 font-bold mt-2");
                         addSystemLog(`Waiting for data update...`, "text-cyan-400 font-mono mt-1");
@@ -1579,7 +1612,6 @@
                         let dirColor = currentDirection === 'LONG' ? 'text-cyan-300' : 'text-pink-300';
                         for (let i = numGrids - 1; i >= 0; i--) {
                             if (activeArr[i] === 0) {
-                                // เช็คเงื่อนไขในการแสดง Log ค้างให้ถูกต้องเหมือนการเริ่มปกติ
                                 if (currentDirection === 'LONG' && pArr[i] <= currentPrice) {
                                     addSystemLog(`[${resumeTimeStr}] ${dirTxt.padEnd(12)} | ${contracts} Con. | @${pArr[i].toFixed(1)}`, `${dirColor} text-[10px] lg:text-[11px]`);
                                 } else if (currentDirection === 'SHORT' && pArr[i] >= currentPrice) {
@@ -1638,26 +1670,25 @@
                         statusBar.classList.add('flex');
                     }
                     
-                    if (tickCountdownInterval) clearInterval(tickCountdownInterval);
-                    tickCountdownInterval = setInterval(updateTickCountdownUI, 1000);
+                    if (tickCountdownInterval) reliableClearInterval(tickCountdownInterval);
+                    tickCountdownInterval = reliableSetInterval(updateTickCountdownUI, 1000, 'tickCountdownInterval');
                     
-                    // (ยกเลิก Fast-Forward: ปล่อยให้บอททยอยเล่นข้อมูลย้อนหลังไปเรื่อยๆ ทีละ 15 วินาที ตามที่ต้องการ)
                     if (priceQueue.length > 4) {
                         addSystemLog(`[System] โหลดข้อมูลสำเร็จ! ข้อมูลจะอัพเดตรอบละ 15 วินาที...`, "text-yellow-400 font-bold mt-2");
                     }
 
-                    if (dataPlayInterval) clearInterval(dataPlayInterval);
-                    dataPlayInterval = setInterval(() => {
+                    if (dataPlayInterval) reliableClearInterval(dataPlayInterval);
+                    dataPlayInterval = reliableSetInterval(() => {
                         playNextTick();
                         nextTickTime = Date.now() + 15000;
-                    }, 15000);
+                    }, 15000, 'dataPlayInterval');
 
                     playNextTick();
 
-                    if (dataPollInterval) clearInterval(dataPollInterval);
-                    dataPollInterval = setInterval(() => {
+                    if (dataPollInterval) reliableClearInterval(dataPollInterval);
+                    dataPollInterval = reliableSetInterval(() => {
                         pollForNewData();
-                    }, 30000);
+                    }, 30000, 'dataPollInterval');
                 };
 
                 // --- 3. Trigger การทำงาน ---
@@ -1687,13 +1718,14 @@
                 
                 isBotRunning = false;
                 isResuming = false;
-                clearInterval(dataPlayInterval);
-                clearInterval(dataPollInterval);
-                if (tickCountdownInterval) clearInterval(tickCountdownInterval);
-                if (uptimeInterval) clearInterval(uptimeInterval);
-                if (autoSaveInterval) clearInterval(autoSaveInterval);
+                
+                if (dataPlayInterval) reliableClearInterval(dataPlayInterval);
+                if (dataPollInterval) reliableClearInterval(dataPollInterval);
+                if (tickCountdownInterval) reliableClearInterval(tickCountdownInterval);
+                if (uptimeInterval) reliableClearInterval(uptimeInterval);
+                if (autoSaveInterval) reliableClearInterval(autoSaveInterval);
                 if (marketWaitInterval) {
-                    clearInterval(marketWaitInterval);
+                    reliableClearInterval(marketWaitInterval);
                     marketWaitInterval = null;
                 }
                 
@@ -1722,7 +1754,6 @@
                 return;
             }
 
-            // ถ้าระบบเปลี่ยนจาก STANDBY มาเป็น SUCCESS จะสลับกลับมาทำงานให้
             if (document.getElementById('bot-status-badge').textContent === "STANDBY") {
                 const btnStart = document.getElementById('btn-start');
                 btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START'; 
@@ -1740,7 +1771,6 @@
             let newPrice = parseFloat(tickData.p.toFixed(1));
             let timeStr = tickData.t;
 
-            // บันทึก Log การเปลี่ยนแปลงราคาทุกๆ 15 วินาที พร้อม Stamp เวลาจากข้อมูลจริง
             addSystemLog(`[${timeStr}] Data Feed Price : ${newPrice.toFixed(1)}`, "text-slate-400");
 
             const trendIcon = document.getElementById('price-trend');
@@ -1751,7 +1781,6 @@
             let startP = currentPrice;
             let endP = newPrice;
 
-            // ตรวจสอบช่องว่างเวลาเกิน 30 นาที (Dynamic Gap Detection)
             let parsedTimeMs = tickData.timeMs;
             let isGapTime = false;
 
