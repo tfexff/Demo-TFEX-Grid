@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <title>TFF Grid Trading Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f3f4f6;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        input, select, textarea {
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            -ms-user-select: auto;
+            user-select: auto;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen flex flex-col lg:h-screen lg:overflow-hidden" oncontextmenu="return false;" onselectstart="return false;" ondragstart="return false;">
+
+    <!-- Custom Alert Modal (Popup) -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-[90%] max-w-md transform scale-95 transition-transform duration-300 relative border border-gray-100">
+            <div class="absolute top-4 right-4 cursor-pointer text-gray-400 hover:text-gray-600 transition" onclick="closeModal()">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </div>
+            <div class="flex items-start gap-4">
+                <div id="modal-icon" class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl">
+                </div>
+                <div class="flex-1">
+                    <h3 id="modal-title" class="text-lg font-bold text-gray-900 mb-1">Title</h3>
+                    <p id="modal-message" class="text-sm text-gray-600 leading-relaxed">Message</p>
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="closeModal()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold rounded-lg transition-colors">รับทราบ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Options Modal -->
+    <div id="load-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-[90%] max-w-sm transform scale-95 transition-transform duration-300 relative border border-gray-100">
+            <div class="absolute top-4 right-4 cursor-pointer text-gray-400 hover:text-gray-600 transition" onclick="closeLoadModal()">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center"><i class="fa-solid fa-cloud-arrow-down text-blue-500 mr-2"></i> โหลดข้อมูลระบบ</h3>
+            
+            <div id="cache-save-info" class="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-xl hidden">
+                <div class="text-sm font-bold text-blue-800 mb-1 flex items-center"><i class="fa-solid fa-floppy-disk mr-2"></i>พบข้อมูล Auto-Save ล่าสุด</div>
+                <div class="text-xs text-blue-600 mb-3 bg-white p-2 rounded border border-blue-100">
+                    <div>Symbol: <span id="cache-symbol-name" class="font-bold"></span></div>
+                    <div>เวลาเซฟ: <span id="cache-time" class="font-mono"></span></div>
+                </div>
+                <button onclick="loadFromCache()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors shadow-md flex justify-center items-center">
+                    <i class="fa-solid fa-clock-rotate-left mr-2"></i> กู้คืนจาก Auto-Save
+                </button>
+            </div>
+            
+            <div class="relative flex items-center py-2" id="load-divider">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="flex-shrink-0 mx-4 text-gray-400 text-xs">หรือ</span>
+                <div class="flex-grow border-t border-gray-200"></div>
+            </div>
+            
+            <button onclick="document.getElementById('file-loader').click(); closeLoadModal();" class="mt-2 w-full py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-bold rounded-lg transition-colors border border-gray-300 flex justify-center items-center">
+                <i class="fa-solid fa-file-import mr-2"></i> อัปโหลดจากไฟล์ (.txt)
+            </button>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="bg-slate-900 text-white shadow-lg z-20 shrink-0 sticky top-0">
+        <div class="px-4 lg:px-6 flex justify-between items-center h-16">
+            <div class="flex items-center gap-2 lg:gap-6">
+                <div class="text-lg lg:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300 whitespace-nowrap">
+                    <i class="fa-solid fa-layer-group mr-1 lg:mr-2 text-blue-400"></i><span class="hidden sm:inline">TFF Grid Trading</span><span class="sm:hidden">TFF Grid</span>
+                </div>
+                <div class="hidden md:flex space-x-1 bg-slate-800 p-1 rounded-lg">
+                    <button id="nav-tab-symbol" class="px-4 py-1.5 bg-blue-600 rounded-md text-sm font-medium shadow">S50M26_LONG</button>
+                    <button class="px-4 py-1.5 hover:bg-slate-700 rounded-md text-sm font-medium text-gray-300 transition">+ เปิดคู่ใหม่</button>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 lg:gap-4">
+                <div class="flex items-center bg-slate-800 rounded-lg px-2 py-1 lg:px-3 border border-slate-700">
+                    <span class="hidden lg:inline text-xs text-gray-400 mr-2">ENV:</span>
+                    <select class="bg-transparent text-xs lg:text-sm font-medium focus:outline-none text-green-400">
+                        <option>UAT</option>
+                        <option>Production</option>
+                    </select>
+                </div>
+                <div class="hidden sm:flex items-center gap-3">
+                    <div id="uptime-container" class="hidden text-xs font-mono font-medium bg-slate-800 text-cyan-400 px-2 py-1 rounded border border-slate-700 items-center gap-1.5">
+                        <i class="fa-solid fa-stopwatch"></i> <span id="uptime-text">00:00:00</span>
+                    </div>
+                    <div id="live-time" class="text-xs text-gray-400 font-mono tracking-wide">--/--/---- --:--:--</div>
+                    <div class="text-xs font-medium text-green-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Online
+                    </div>
+                </div>
+                <button class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600 transition">
+                    <i class="fa-solid fa-bars sm:hidden"></i>
+                    <i class="fa-solid fa-user hidden sm:block"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col lg:flex-row p-3 sm:p-4 gap-4 lg:overflow-hidden">
+        
+        <!-- Left Panel: Strategy Settings -->
+        <div class="w-full lg:w-[340px] xl:w-[380px] flex-shrink-0 flex flex-col gap-4 lg:overflow-y-auto lg:pr-2 lg:pb-2">
+            
+            <div class="glass-panel p-4 lg:p-5 rounded-xl shadow-sm border border-gray-200 flex-shrink-0">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800"><i class="fa-solid fa-robot mr-2 text-blue-500"></i>ควบคุมบอท</h2>
+                    <span id="bot-status-badge" class="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200">หยุดทำงาน</span>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-start" onclick="toggleBot(true)" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-lg font-bold shadow-lg shadow-green-200 transition transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-play mr-2"></i> START
+                    </button>
+                    <button id="btn-stop" onclick="toggleBot(false)" class="flex-1 bg-gray-200 text-gray-500 py-3 rounded-lg font-bold cursor-not-allowed transition" disabled>
+                        <i class="fa-solid fa-stop mr-2"></i> STOP
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 lg:p-5 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden flex-shrink-0">
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
+                <div class="space-y-4 ml-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
+                        <label class="text-sm font-medium text-gray-700 sm:w-1/4">Symbol</label>
+                        <input type="text" id="inp-symbol" value="S50M26" class="w-full sm:w-3/4 px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-800 uppercase focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
+                    </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
+                        <label class="text-sm font-medium text-gray-700 sm:w-1/4">Direction</label>
+                        <div class="flex w-full sm:w-3/4 gap-2">
+                            <button id="btn-long" onclick="setDirection('LONG')" class="flex-1 py-2 rounded-md font-semibold text-sm transition bg-[#0ea5e9] text-white shadow-sm border border-[#0284c7]">
+                                LONG
+                            </button>
+                            <button id="btn-short" onclick="setDirection('SHORT')" class="flex-1 py-2 rounded-md font-semibold text-sm transition bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">
+                                SHORT
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 lg:p-5 rounded-xl shadow-sm border border-gray-200 flex-shrink-0">
+                <div class="flex justify-between items-end mb-4 border-b border-gray-100 pb-3">
+                    <h2 class="text-md lg:text-lg font-semibold text-gray-800">ตั้งค่ากลยุทธ์ Grid</h2>
+                    <div class="space-x-2">
+                        <button class="text-blue-600 text-xs lg:text-sm hover:underline disabled:opacity-50" id="btn-load" onclick="openLoadModal()"><i class="fa-solid fa-download mr-1"></i>โหลด</button>
+                        <button class="text-blue-600 text-xs lg:text-sm hover:underline disabled:opacity-50" id="btn-save" onclick="exportSaveFile()"><i class="fa-solid fa-upload mr-1"></i>บันทึก</button>
+                    </div>
+                </div>
+
+                <div class="space-y-5">
+                    <div class="bg-blue-50 p-3 lg:p-4 rounded-lg border border-blue-100 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs lg:text-sm font-medium text-gray-700">กรอบบน (Upper)</label>
+                            <input type="number" id="inp-upper" value="1000" step="0.1" class="w-24 lg:w-32 px-2 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs lg:text-sm font-medium text-gray-700">กรอบล่าง (Lower)</label>
+                            <input type="number" id="inp-lower" value="990" step="0.1" class="w-24 lg:w-32 px-2 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs lg:text-sm font-medium text-gray-700">ระยะกริด (จุด)</label>
+                            <input type="number" id="inp-spacing" value="1.0" step="0.1" class="w-24 lg:w-32 px-2 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs lg:text-sm font-medium text-gray-700">จำนวนสัญญาต่อออเดอร์</label>
+                            <input type="number" id="inp-contracts" value="1" step="1" class="w-24 lg:w-32 px-2 py-1.5 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-gray-100 space-y-3">
+                        <div class="text-sm font-medium text-gray-600 mb-3 flex items-center">
+                            <i class="fa-solid fa-shield mr-2"></i>ตั้งค่าความเสี่ยง
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs lg:text-sm text-gray-700">ราคาเริ่มทำงาน (ครั้งแรก)</label>
+                            <input type="number" id="inp-risk-activation" placeholder="ปัจจุบัน" step="0.1" class="w-24 lg:w-32 px-2 py-1 border rounded-md text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs lg:text-sm text-gray-700">ราคา Stop Loss (หยุดระบบ)</label>
+                            <input type="number" id="inp-risk-sl" placeholder="ไม่กำหนด" step="0.1" class="w-24 lg:w-32 px-2 py-1 border border-red-300 bg-red-50 text-red-700 rounded-md text-right text-sm focus:ring-2 focus:ring-red-500 outline-none transition-colors">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs lg:text-sm text-gray-700">หยุดระบบเมื่อ Realized</label>
+                            <input type="number" id="inp-risk-tp-realized" placeholder="ไม่กำหนด" class="w-24 lg:w-32 px-2 py-1 border border-emerald-300 bg-emerald-50 text-emerald-700 rounded-md text-right text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-colors">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs lg:text-sm text-gray-700">หยุดระบบเมื่อ Unrealized</label>
+                            <input type="number" id="inp-risk-tp-unrealized" placeholder="ไม่กำหนด" class="w-24 lg:w-32 px-2 py-1 border border-purple-300 bg-purple-50 text-purple-700 rounded-md text-right text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-colors">
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-gray-100">
+                        <div class="text-sm font-medium text-gray-600 mb-3 flex items-center">
+                            <i class="fa-solid fa-sliders mr-2"></i>ตั้งค่าขั้นสูง
+                        </div>
+                        <div class="space-y-3 bg-gray-50 p-3 rounded-lg text-xs lg:text-sm border border-gray-100">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">รวบไม้ตอนเปิด (ครั้งแรก)</span>
+                                <label id="lbl-adv-batch" class="relative inline-flex items-center cursor-pointer transition-opacity">
+                                  <input type="checkbox" id="inp-adv-batch" class="sr-only peer">
+                                  <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">ไม้สุดท้ายรันเทรนด์ (Let profit run)</span>
+                                <label id="lbl-adv-lpr" class="relative inline-flex items-center cursor-pointer transition-opacity">
+                                  <input type="checkbox" id="inp-adv-lpr" class="sr-only peer">
+                                  <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Dashboard & Logs -->
+        <div class="w-full lg:flex-1 flex flex-col gap-4 lg:overflow-hidden min-h-0">
+            
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 flex-shrink-0">
+                <div class="glass-panel p-3 lg:p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 relative overflow-hidden">
+                    <div class="text-[10px] lg:text-xs text-gray-500 mb-1">ราคาปัจจุบัน (S50M26)</div>
+                    <div class="text-lg lg:text-2xl font-bold text-gray-800 flex items-center">
+                        <span id="current-price">995.0</span> 
+                        <i id="price-trend" class="fa-solid fa-caret-up text-green-500 text-md lg:text-lg ml-2"></i>
+                    </div>
+                </div>
+                <div class="glass-panel p-3 lg:p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-green-500 relative overflow-hidden">
+                    <div class="absolute top-2 right-3 opacity-10 text-gray-800"><i class="fa-solid fa-arrow-trend-up text-4xl"></i></div>
+                    <div class="text-[10px] lg:text-xs text-gray-500 mb-1">กำไรรับรู้แล้ว (Realized P/L)</div>
+                    <div id="kpi-realized" class="text-lg lg:text-2xl font-bold text-emerald-600">+฿0.00</div>
+                    <div id="kpi-comm" class="text-[10px] lg:text-xs text-gray-400 mt-1">หักค่าคอมฯ รวม: ฿0.00</div>
+                </div>
+                <div class="glass-panel p-3 lg:p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-yellow-500 relative">
+                    <div class="text-[10px] lg:text-xs text-gray-500 mb-1">สถานะถือครองปัจจุบัน</div>
+                    <div id="kpi-hold" class="text-lg lg:text-2xl font-bold text-gray-800">0 <span class="text-[10px] lg:text-sm font-normal text-gray-500">สัญญา</span></div>
+                    <div id="kpi-avg" class="text-[10px] lg:text-xs text-gray-400 mt-1">ทุนเฉลี่ย: 0.0</div>
+                </div>
+                <div class="glass-panel p-3 lg:p-4 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-purple-500 relative">
+                    <div class="text-[10px] lg:text-xs text-gray-500 mb-1">Unrealized</div>
+                    <div id="kpi-unrealized" class="text-lg lg:text-2xl font-bold text-gray-800">฿0.00</div>
+                    <div id="kpi-dd" class="text-[10px] lg:text-xs text-red-500 mt-1 font-mono">Max DD: -0.00% | Cur: -0.00%</div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 lg:p-6 rounded-xl shadow-sm border border-gray-200 overflow-x-auto flex-shrink-0">
+                <h2 class="text-md lg:text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fa-solid fa-chart-line mr-2 text-indigo-500"></i>สถานะราคาในกรอบ Grid
+                </h2>
+                <div class="relative w-[300px] sm:w-full h-16 mt-6 mx-auto sm:mx-0">
+                    <div class="absolute top-1/2 left-0 w-full h-2 lg:h-3 bg-gray-200 rounded-full transform -translate-y-1/2"></div>
+                    <div class="absolute top-1/2 left-[10%] w-[80%] h-2 lg:h-3 bg-gradient-to-r from-blue-200 via-green-200 to-blue-200 rounded-full transform -translate-y-1/2 border-y border-gray-300"></div>
+                    
+                    <div class="absolute top-1/2 left-[10%] w-0.5 h-6 lg:h-8 bg-blue-600 transform -translate-y-1/2">
+                        <div id="vis-lower" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-blue-600">990.0</div>
+                        <div class="absolute -top-5 lg:-top-6 -left-4 lg:-left-6 text-[10px] lg:text-xs text-gray-500 whitespace-nowrap">กรอบล่าง</div>
+                    </div>
+                    
+                    <div class="absolute top-1/2 right-[10%] w-0.5 h-6 lg:h-8 bg-blue-600 transform -translate-y-1/2">
+                        <div id="vis-upper" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-blue-600">1000.0</div>
+                        <div class="absolute -top-5 lg:-top-6 -left-3 lg:-left-4 text-[10px] lg:text-xs text-gray-500 whitespace-nowrap">กรอบบน</div>
+                    </div>
+
+                    <div id="marker-sl" class="absolute top-1/2 left-[2%] w-0.5 h-4 lg:h-6 bg-red-500 transform -translate-y-1/2 transition-all duration-300 z-0">
+                        <div id="vis-sl-text" class="absolute -bottom-5 lg:-bottom-6 -left-3 lg:-left-4 text-[10px] lg:text-xs font-bold text-red-500">780.0</div>
+                        <div class="absolute -top-5 lg:-top-6 -left-2 text-[10px] lg:text-xs text-red-500 whitespace-nowrap">SL</div>
+                    </div>
+
+                    <div id="price-indicator" class="absolute top-1/2 left-[50%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-500 ease-in-out z-10">
+                        <div class="bg-gray-800 text-white text-[10px] lg:text-xs font-bold py-0.5 px-1.5 lg:py-1 lg:px-2 rounded mb-1 shadow-lg flex items-center gap-1">
+                            <span id="indicator-price">995.0</span>
+                        </div>
+                        <div class="w-3 h-3 lg:w-4 lg:h-4 bg-white border-[3px] lg:border-4 border-gray-800 rounded-full shadow-md"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl shadow-sm border border-gray-200 flex flex-col h-[350px] lg:h-auto lg:flex-1 min-h-0 overflow-hidden shrink-0 lg:shrink">
+                <div class="flex overflow-x-auto border-b border-gray-200 bg-gray-50 rounded-t-xl whitespace-nowrap flex-shrink-0">
+                    <button id="tab-btn-activity" onclick="switchTab('activity')" class="px-4 lg:px-6 py-2 lg:py-3 text-[11px] lg:text-sm font-semibold text-blue-600 border-b-2 border-blue-600 bg-white">
+                        <i class="fa-solid fa-list-ul mr-1 lg:mr-2"></i>Activity Logs
+                    </button>
+                    <button id="tab-btn-open" onclick="switchTab('open')" class="px-4 lg:px-6 py-2 lg:py-3 text-[11px] lg:text-sm font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition">
+                        <i class="fa-solid fa-briefcase mr-1 lg:mr-2"></i>Open Orders (<span id="tab-open-count">0</span>)
+                    </button>
+                    <button id="tab-btn-history" onclick="switchTab('history')" class="px-4 lg:px-6 py-2 lg:py-3 text-[11px] lg:text-sm font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition">
+                        <i class="fa-solid fa-clock-rotate-left mr-1 lg:mr-2"></i>Order History
+                    </button>
+                </div>
+                
+                <div class="relative flex-1 bg-slate-900 min-h-0">
+                    <div id="tab-activity" class="absolute inset-0 p-3 lg:p-4 overflow-y-auto font-mono text-[11px] lg:text-[13px] text-gray-300 leading-relaxed block">
+                        <div class="text-green-400" id="log-initial-msg">[System] Initialized. Waiting for bot start...</div>
+                        <div class="opacity-50" id="log-initial-divider">---------------------------------------------------</div>
+                        <div id="new-logs"></div>
+                        <div id="typing-cursor" class="inline-block w-1.5 h-3 lg:w-2 lg:h-4 bg-green-500 animate-pulse mt-1"></div>
+                    </div>
+
+                    <div id="tab-open" class="absolute inset-0 p-0 overflow-y-auto font-mono text-[11px] lg:text-[13px] text-gray-300 hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="text-gray-400 bg-slate-800 sticky top-0 shadow-md">
+                                <tr>
+                                    <th class="py-2 px-4 font-semibold">Direction</th>
+                                    <th class="py-2 px-4 font-semibold">Price (Entry)</th>
+                                    <th class="py-2 px-4 font-semibold text-right">Contracts</th>
+                                    <th class="py-2 px-4 font-semibold text-right">Unrealized PnL</th>
+                                </tr>
+                            </thead>
+                            <tbody id="open-orders-body" class="divide-y divide-slate-800/50">
+                                <tr><td colspan="4" class="py-6 text-center text-slate-500">ไม่มีออเดอร์ที่เปิดอยู่</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="tab-history" class="absolute inset-0 p-0 overflow-y-auto font-mono text-[11px] lg:text-[13px] text-gray-300 hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="text-gray-400 bg-slate-800 sticky top-0 shadow-md">
+                                <tr>
+                                    <th class="py-2 px-4 font-semibold">Time</th>
+                                    <th class="py-2 px-4 font-semibold">Action</th>
+                                    <th class="py-2 px-4 font-semibold text-right">Open Price</th>
+                                    <th class="py-2 px-4 font-semibold text-right">Close Price</th>
+                                    <th class="py-2 px-4 font-semibold text-right">Net PnL</th>
+                                </tr>
+                            </thead>
+                            <tbody id="order-history-body" class="divide-y divide-slate-800/50">
+                                <tr><td colspan="5" class="py-6 text-center text-slate-500">ยังไม่มีประวัติการปิดทำกำไร</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Input แบบซ่อนสำหรับโหลดไฟล์ Save -->
+    <input type="file" id="file-loader" class="hidden" accept=".txt" onchange="handleFileLoad(event)">
+
+    <script>
+        // --- System Core Logic & State ---
+        const capital = 500000;
+        const multiplier = 200;
+        const commission = 18;
+        
+        let pArr = [];
+        let tArr = [];
+        let activeArr = [];
+        let entryArr = [];
+        let numGrids = 0;
+        let gridSpacing = 0;
+        let lowerLimit = 0;
+        let upperLimit = 0;
+
+        let isBotRunning = false;
+        let isResuming = false; 
+        let currentPrice = 995.0; 
+        let priceInterval;
+        let currentDirection = 'LONG';
+        let currentTab = 'activity';
+        
+        // PnL & Tracking States
+        let realizedPNL = 0;
+        let totalComm = 0;
+        let activeCount = 0;
+        let sumEntry = 0;
+        let matchedCycles = 0;
+        
+        let currentUnrealizedPNL = 0;
+        let maxTotalPnL = 0;
+        let currentDrawdownTHB = 0;
+        let maxDrawdownTHB = 0;
+
+        // Risk Settings State
+        let isWaitingActivation = false;
+        let activationTarget = null;
+        let activationDirection = 0;
+        let stopLossTarget = null;
+        let targetRealized = null;
+        let targetUnrealized = null;
+
+        let closedTradesHistory = [];
+        
+        // Uptime Tracking & Auto Save
+        let botStartTime = null;
+        let totalUptimeMs = 0;
+        let uptimeInterval = null;
+        let autoSaveInterval = null;
+
+        // --- Custom Alert Modal ---
+        function showModal(title, message, type = 'error') {
+            const modal = document.getElementById('custom-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const modalIcon = document.getElementById('modal-icon');
+
+            modalTitle.innerText = title;
+            modalMessage.innerHTML = message;
+
+            if (type === 'error') {
+                modalIcon.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl bg-red-100 text-red-600';
+                modalIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            } else if (type === 'warning') {
+                modalIcon.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl bg-yellow-100 text-yellow-600';
+                modalIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+            } else {
+                modalIcon.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl bg-blue-100 text-blue-600';
+                modalIcon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+            }
+
+            modal.classList.remove('hidden');
+            void modal.offsetWidth;
+            modal.classList.remove('opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+            modal.querySelector('div').classList.add('scale-100');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('custom-modal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // --- Load Options Modal ---
+        function openLoadModal() {
+            if (isBotRunning) {
+                showModal("แจ้งเตือน", "ไม่สามารถโหลดข้อมูลได้ในขณะที่บอทกำลังทำงาน", "warning");
+                return;
+            }
+
+            const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
+            const cacheDataStr = localStorage.getItem(`TFF_AutoSave_${symbol}`);
+            const cacheInfoBox = document.getElementById('cache-save-info');
+            const divider = document.getElementById('load-divider');
+
+            if (cacheDataStr) {
+                try {
+                    const cacheData = JSON.parse(cacheDataStr);
+                    const date = new Date(cacheData.timestamp);
+                    document.getElementById('cache-symbol-name').innerText = symbol;
+                    document.getElementById('cache-time').innerText = date.toLocaleString('en-GB');
+                    cacheInfoBox.classList.remove('hidden');
+                    divider.classList.remove('hidden');
+                } catch(e) {
+                    cacheInfoBox.classList.add('hidden');
+                    divider.classList.add('hidden');
+                }
+            } else {
+                cacheInfoBox.classList.add('hidden');
+                divider.classList.add('hidden');
+            }
+
+            const modal = document.getElementById('load-modal');
+            modal.classList.remove('hidden');
+            void modal.offsetWidth; 
+            modal.classList.remove('opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+            modal.querySelector('div').classList.add('scale-100');
+        }
+
+        function closeLoadModal() {
+            const modal = document.getElementById('load-modal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // --- Update Clock & Uptime ---
+        function updateClock() {
+            const now = new Date();
+            const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            const dateStr = now.toLocaleDateString('en-GB', dateOptions);
+            const timeStr = now.toLocaleTimeString('en-GB', timeOptions);
+            document.getElementById('live-time').innerText = `${dateStr} ${timeStr}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function updateUptimeDisplay() {
+            let current = totalUptimeMs;
+            if (isBotRunning && botStartTime) {
+                current += (Date.now() - botStartTime);
+            }
+            let totalSeconds = Math.floor(current / 1000);
+            let hours = Math.floor(totalSeconds / 3600);
+            let mins = Math.floor((totalSeconds % 3600) / 60);
+            let secs = totalSeconds % 60;
+            
+            let formatted = String(hours).padStart(2, '0') + ':' +
+                            String(mins).padStart(2, '0') + ':' +
+                            String(secs).padStart(2, '0');
+                
+            document.getElementById('uptime-text').innerText = formatted;
+        }
+
+        // --- Visual Grid Updater ---
+        function updateVisualGrid() {
+            let upper = parseFloat(document.getElementById('inp-upper').value);
+            let lower = parseFloat(document.getElementById('inp-lower').value);
+            let sl = parseFloat(document.getElementById('inp-risk-sl').value);
+
+            if(isNaN(upper)) upper = 1000.0;
+            if(isNaN(lower)) lower = 990.0;
+
+            document.getElementById('vis-upper').innerText = upper.toFixed(1);
+            document.getElementById('vis-lower').innerText = lower.toFixed(1);
+
+            const slMarker = document.getElementById('marker-sl');
+            const slText = document.getElementById('vis-sl-text');
+
+            if (!isNaN(sl)) {
+                slMarker.style.display = 'block';
+                slText.innerText = sl.toFixed(1);
+                
+                let percentage = 10 + ((sl - lower) / (upper - lower)) * 80;
+                percentage = Math.max(0, Math.min(percentage, 100)); 
+                slMarker.style.left = `${percentage}%`;
+            } else {
+                slMarker.style.display = 'none';
+            }
+            
+            let priceIndicator = document.getElementById('price-indicator');
+            let percPrice = 10 + ((currentPrice - lower) / (upper - lower)) * 80;
+            percPrice = Math.max(0, Math.min(percPrice, 100));
+            priceIndicator.style.left = `${percPrice}%`;
+        }
+
+        function updateNavTab() {
+            const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
+            document.getElementById('nav-tab-symbol').innerText = `${symbol}_${currentDirection}`;
+        }
+
+        document.getElementById('inp-upper').addEventListener('input', updateVisualGrid);
+        document.getElementById('inp-lower').addEventListener('input', updateVisualGrid);
+        document.getElementById('inp-risk-sl').addEventListener('input', updateVisualGrid);
+        document.getElementById('inp-symbol').addEventListener('input', updateNavTab); 
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            updateVisualGrid();
+            updateNavTab();
+        });
+
+        // --- Functions ---
+        function setDirectionUI(dir) {
+            currentDirection = dir;
+            const btnLong = document.getElementById('btn-long');
+            const btnShort = document.getElementById('btn-short');
+
+            if (dir === 'LONG') {
+                btnLong.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-[#0ea5e9] text-white shadow-sm border border-[#0284c7]";
+                btnShort.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-red-50 text-red-700 border border-red-200 hover:bg-red-100";
+            } else {
+                btnShort.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-[#ef4444] text-white shadow-sm border border-[#b91c1c]";
+                btnLong.className = "flex-1 py-2 rounded-md font-semibold text-sm transition bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100";
+            }
+            updateNavTab(); 
+        }
+
+        function setDirection(dir) {
+            if (isBotRunning) {
+                showModal("แจ้งเตือน", "ไม่สามารถเปลี่ยนทิศทางได้ในขณะที่บอทกำลังทำงาน", "warning");
+                return;
+            }
+            setDirectionUI(dir);
+        }
+
+        function toggleSettingsLock(isLocked) {
+            const inputsToLock = [
+                'inp-symbol', 'inp-upper', 'inp-lower', 'inp-spacing', 'inp-contracts',
+                'inp-risk-activation', 'inp-risk-sl', 'inp-risk-tp-realized', 'inp-risk-tp-unrealized',
+                'inp-adv-batch', 'inp-adv-lpr'
+            ];
+            
+            inputsToLock.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.disabled = isLocked;
+                    if (isLocked) {
+                        if (el.type !== 'checkbox') el.classList.add('bg-gray-100', 'text-gray-400');
+                        el.classList.add('cursor-not-allowed');
+                    } else {
+                        if (el.type !== 'checkbox') el.classList.remove('bg-gray-100', 'text-gray-400');
+                        el.classList.remove('cursor-not-allowed');
+                    }
+                }
+            });
+
+            document.getElementById('btn-load').disabled = isLocked;
+            document.getElementById('btn-save').disabled = isLocked;
+
+            const btnLong = document.getElementById('btn-long');
+            const btnShort = document.getElementById('btn-short');
+            btnLong.disabled = isLocked;
+            btnShort.disabled = isLocked;
+            if(isLocked) {
+                btnLong.classList.add('opacity-50', 'cursor-not-allowed');
+                btnShort.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                btnLong.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnShort.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            
+            const advBatchLabel = document.getElementById('lbl-adv-batch');
+            const advLprLabel = document.getElementById('lbl-adv-lpr');
+            if(isLocked) {
+                advBatchLabel.classList.add('pointer-events-none', 'opacity-50');
+                advLprLabel.classList.add('pointer-events-none', 'opacity-50');
+            } else {
+                advBatchLabel.classList.remove('pointer-events-none', 'opacity-50');
+                advLprLabel.classList.remove('pointer-events-none', 'opacity-50');
+            }
+        }
+
+        // --- System Data Extractor ---
+        function getSystemStateObj() {
+            const currentUptimeToSave = totalUptimeMs + (isBotRunning && botStartTime ? Date.now() - botStartTime : 0);
+            return {
+                version: '1.4',
+                timestamp: new Date().toISOString(),
+                state: {
+                    pArr: Array.from(pArr),
+                    tArr: Array.from(tArr),
+                    activeArr: Array.from(activeArr),
+                    entryArr: Array.from(entryArr),
+                    numGrids, gridSpacing, lowerLimit, upperLimit,
+                    currentPrice, currentDirection, realizedPNL, totalComm,
+                    activeCount, sumEntry, maxTotalPnL, currentDrawdownTHB, maxDrawdownTHB, matchedCycles,
+                    currentUnrealizedPNL,
+                    closedTradesHistory,
+                    isWaitingActivation, activationTarget, activationDirection,
+                    stopLossTarget, targetRealized, targetUnrealized,
+                    totalUptimeMs: currentUptimeToSave
+                },
+                inputs: {
+                    symbol: document.getElementById('inp-symbol').value,
+                    upper: document.getElementById('inp-upper').value,
+                    lower: document.getElementById('inp-lower').value,
+                    spacing: document.getElementById('inp-spacing').value,
+                    contracts: document.getElementById('inp-contracts').value,
+                    riskActivation: document.getElementById('inp-risk-activation').value,
+                    riskSl: document.getElementById('inp-risk-sl').value,
+                    riskTpRealized: document.getElementById('inp-risk-tp-realized').value,
+                    riskTpUnrealized: document.getElementById('inp-risk-tp-unrealized').value,
+                    advBatch: document.getElementById('inp-adv-batch').checked,
+                    advLpr: document.getElementById('inp-adv-lpr').checked
+                },
+                logs: document.getElementById('new-logs').innerHTML
+            };
+        }
+
+        // --- Save / Load Feature ---
+        function exportSaveFile() {
+            if (isBotRunning) {
+                showModal("แจ้งเตือน", "โปรดกด <b>STOP</b> บอทก่อนทำการบันทึกข้อมูลแบบ Manual ครับ", "warning");
+                return;
+            }
+
+            const saveData = getSystemStateObj();
+            const dataStr = JSON.stringify(saveData, null, 2);
+            const blob = new Blob([dataStr], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            
+            a.href = url;
+            a.download = `TFF_Grid_Save_${yyyy}${mm}${dd}_${hh}${min}${ss}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function executeAutoSave() {
+            if (!isBotRunning) return;
+            
+            const saveData = getSystemStateObj();
+            const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
+            
+            // แบ็คอัปเงียบๆ ลง LocalStorage ตามชื่อ Symbol (ไม่มีการให้ดาวน์โหลดไฟล์)
+            localStorage.setItem(`TFF_AutoSave_${symbol}`, JSON.stringify(saveData));
+
+            const timeStr = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            const logBox = document.getElementById('new-logs');
+            logBox.insertAdjacentHTML('beforeend', `<div class="text-blue-400 mt-1 mb-2">[${timeStr}] 💾 Auto-Saved to Browser Cache (${symbol})</div>`);
+            
+            while (logBox.children.length > 500) {
+                logBox.removeChild(logBox.firstChild);
+            }
+            
+            const scrollBox = document.getElementById('tab-activity');
+            scrollBox.scrollTop = scrollBox.scrollHeight;
+        }
+
+        function applySaveData(saveData) {
+            document.getElementById('inp-symbol').value = saveData.inputs.symbol || '';
+            document.getElementById('inp-upper').value = saveData.inputs.upper || '';
+            document.getElementById('inp-lower').value = saveData.inputs.lower || '';
+            document.getElementById('inp-spacing').value = saveData.inputs.spacing || '';
+            document.getElementById('inp-contracts').value = saveData.inputs.contracts || '';
+            document.getElementById('inp-risk-activation').value = saveData.inputs.riskActivation || '';
+            document.getElementById('inp-risk-sl').value = saveData.inputs.riskSl || '';
+            document.getElementById('inp-risk-tp-realized').value = saveData.inputs.riskTpRealized || '';
+            document.getElementById('inp-risk-tp-unrealized').value = saveData.inputs.riskTpUnrealized || '';
+            document.getElementById('inp-adv-batch').checked = saveData.inputs.advBatch || false;
+            document.getElementById('inp-adv-lpr').checked = saveData.inputs.advLpr || false;
+
+            numGrids = saveData.state.numGrids || 0;
+            gridSpacing = saveData.state.gridSpacing || 0;
+            lowerLimit = saveData.state.lowerLimit || 0;
+            upperLimit = saveData.state.upperLimit || 0;
+            currentPrice = saveData.state.currentPrice || 0;
+            currentDirection = saveData.state.currentDirection || 'LONG';
+            realizedPNL = saveData.state.realizedPNL || 0;
+            totalComm = saveData.state.totalComm || 0;
+            activeCount = saveData.state.activeCount || 0;
+            sumEntry = saveData.state.sumEntry || 0;
+            
+            maxTotalPnL = saveData.state.maxTotalPnL || 0;
+            currentDrawdownTHB = saveData.state.currentDrawdownTHB || 0;
+            maxDrawdownTHB = saveData.state.maxDrawdownTHB || 0;
+            currentUnrealizedPNL = saveData.state.currentUnrealizedPNL || 0;
+
+            matchedCycles = saveData.state.matchedCycles || 0;
+            closedTradesHistory = saveData.state.closedTradesHistory || [];
+            
+            isWaitingActivation = saveData.state.isWaitingActivation || false;
+            activationTarget = saveData.state.activationTarget || null;
+            activationDirection = saveData.state.activationDirection || 0;
+            stopLossTarget = saveData.state.stopLossTarget || null;
+            targetRealized = saveData.state.targetRealized || null;
+            targetUnrealized = saveData.state.targetUnrealized || null;
+            totalUptimeMs = saveData.state.totalUptimeMs || 0;
+            botStartTime = null;
+
+            pArr = new Float64Array(saveData.state.pArr || []);
+            tArr = new Float64Array(saveData.state.tArr || []);
+            activeArr = new Uint8Array(saveData.state.activeArr || []);
+            entryArr = new Float64Array(saveData.state.entryArr || []);
+
+            document.getElementById('new-logs').innerHTML = saveData.logs || '';
+            
+            if (totalUptimeMs > 0) {
+                document.getElementById('uptime-container').classList.remove('hidden');
+                document.getElementById('uptime-container').classList.add('flex');
+            }
+            updateUptimeDisplay();
+            
+            setDirectionUI(currentDirection); 
+            updateVisualGrid();
+            calculateAndUpdateAll();
+            
+            const btnStart = document.getElementById('btn-start');
+            btnStart.innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> RE-START';
+            btnStart.className = "flex-1 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white py-3 rounded-lg font-bold shadow-lg shadow-yellow-200 transition transform hover:-translate-y-0.5";
+            
+            isResuming = true;
+            
+            const logContainer = document.getElementById('new-logs');
+            logContainer.insertAdjacentHTML('beforeend', `<div class="text-blue-400 mt-2">[${new Date().toLocaleTimeString('en-GB', { hour12: false })}] 📥 SYSTEM STATE RESTORED SUCCESSFULLY.</div>`);
+            const scrollBox = document.getElementById('tab-activity');
+            scrollBox.scrollTop = scrollBox.scrollHeight;
+        }
+
+        function loadFromCache() {
+            const symbol = document.getElementById('inp-symbol').value.trim().toUpperCase() || 'SYMBOL';
+            const cacheDataStr = localStorage.getItem(`TFF_AutoSave_${symbol}`);
+            if (cacheDataStr) {
+                try {
+                    const saveData = JSON.parse(cacheDataStr);
+                    applySaveData(saveData);
+                    closeLoadModal();
+                } catch (err) {
+                    console.error(err);
+                    showModal("ข้อผิดพลาด", "ข้อมูล Cache เสียหาย ไม่สามารถกู้คืนได้", "error");
+                }
+            }
+        }
+
+        function handleFileLoad(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const saveData = JSON.parse(e.target.result);
+                    applySaveData(saveData);
+                } catch(err) {
+                    console.error(err);
+                    showModal("ข้อผิดพลาด", "เกิดข้อผิดพลาดในการโหลดไฟล์ ตรวจสอบความถูกต้องของไฟล์ Save อีกครั้ง", "error");
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; 
+        }
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            const tabs = ['activity', 'open', 'history'];
+            
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const content = document.getElementById(`tab-${t}`);
+                
+                if (t === tabId) {
+                    btn.className = "px-4 lg:px-6 py-2 lg:py-3 text-[11px] lg:text-sm font-semibold text-blue-600 border-b-2 border-blue-600 bg-white";
+                    content.classList.remove('hidden');
+                    content.classList.add('block');
+                } else {
+                    btn.className = "px-4 lg:px-6 py-2 lg:py-3 text-[11px] lg:text-sm font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition";
+                    content.classList.remove('block');
+                    content.classList.add('hidden');
+                }
+            });
+
+            if (tabId === 'open') renderOpenOrders();
+            if (tabId === 'history') renderOrderHistory();
+        }
+
+        function renderOpenOrders() {
+            const tbody = document.getElementById('open-orders-body');
+            let html = '';
+            let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+            
+            for (let j = numGrids - 1; j >= 0; j--) {
+                if (activeArr[j] === 1) {
+                    let openPrice = entryArr[j];
+                    let unrlPnl = 0;
+                    let dirLabel = currentDirection === 'LONG' ? '<span class="text-blue-400 font-bold">LONG</span>' : '<span class="text-red-400 font-bold">SHORT</span>';
+                    
+                    if (currentDirection === 'LONG') {
+                        unrlPnl = (currentPrice - openPrice) * multiplier * contracts;
+                    } else {
+                        unrlPnl = (openPrice - currentPrice) * multiplier * contracts;
+                    }
+                    
+                    let pnlClass = unrlPnl >= 0 ? 'text-emerald-400' : 'text-red-400';
+                    let pnlStr = unrlPnl >= 0 ? `+${unrlPnl.toLocaleString('en-US', {minimumFractionDigits:2})}` : unrlPnl.toLocaleString('en-US', {minimumFractionDigits:2});
+                    
+                    html += `<tr class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4">${dirLabel}</td>
+                        <td class="py-3 px-4 text-white">${openPrice.toFixed(1)}</td>
+                        <td class="py-3 px-4 text-right">${contracts}</td>
+                        <td class="py-3 px-4 text-right font-bold ${pnlClass}">${pnlStr}</td>
+                    </tr>`;
+                }
+            }
+            if (activeCount === 0) {
+                html = `<tr><td colspan="4" class="py-6 text-center text-slate-500">ไม่มีออเดอร์ที่เปิดอยู่</td></tr>`;
+            }
+            tbody.innerHTML = html;
+        }
+
+        function renderOrderHistory() {
+            const tbody = document.getElementById('order-history-body');
+            let html = '';
+            if (closedTradesHistory.length === 0) {
+                html = `<tr><td colspan="5" class="py-6 text-center text-slate-500">ยังไม่มีประวัติการปิดทำกำไร</td></tr>`;
+            } else {
+                [...closedTradesHistory].reverse().forEach(t => {
+                    let pnlClass = t.pnl >= 0 ? 'text-emerald-400' : 'text-red-400';
+                    let pnlStr = t.pnl >= 0 ? `+${t.pnl.toLocaleString('en-US', {minimumFractionDigits:2})}` : t.pnl.toLocaleString('en-US', {minimumFractionDigits:2});
+                    html += `<tr class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 px-4 text-slate-400">${t.time}</td>
+                        <td class="py-3 px-4 font-semibold text-gray-200">${t.action}</td>
+                        <td class="py-3 px-4 text-right">${t.openPrice.toFixed(1)}</td>
+                        <td class="py-3 px-4 text-right text-white">${t.closePrice.toFixed(1)}</td>
+                        <td class="py-3 px-4 text-right font-bold ${pnlClass}">${pnlStr}</td>
+                    </tr>`;
+                });
+            }
+            tbody.innerHTML = html;
+        }
+
+        function addLog(action, price, contracts, pnl, time) {
+            const logBox = document.getElementById('new-logs');
+            let pnlText = pnl !== null ? ` | PnL: <span class="${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}">${pnl >= 0 ? '+' : ''}${pnl.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>` : '';
+            
+            let colorClass = action.toUpperCase().includes('BUY') ? 'text-cyan-300' : (action.toUpperCase().includes('SELL') ? 'text-pink-300' : 'text-amber-400 font-bold');
+            
+            let msg = `<div class="${colorClass}">[${time}] ${action.padEnd(12)} | ${contracts} Con. | @${price.toFixed(1)}${pnlText}</div>`;
+            
+            logBox.insertAdjacentHTML('beforeend', msg);
+            
+            while (logBox.children.length > 500) {
+                logBox.removeChild(logBox.firstChild);
+            }
+            
+            const scrollBox = document.getElementById('tab-activity');
+            scrollBox.scrollTop = scrollBox.scrollHeight;
+        }
+
+        function calculateAndUpdateAll() {
+            let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+            
+            currentUnrealizedPNL = 0;
+            if (activeCount > 0) {
+                if (currentDirection === 'LONG') {
+                    currentUnrealizedPNL = ((currentPrice * activeCount) - sumEntry) * multiplier * contracts;
+                } else {
+                    currentUnrealizedPNL = (sumEntry - (currentPrice * activeCount)) * multiplier * contracts;
+                }
+            }
+            
+            let currentTotalPnL = realizedPNL + currentUnrealizedPNL;
+            if (currentTotalPnL > maxTotalPnL) {
+                maxTotalPnL = currentTotalPnL; 
+            }
+            
+            currentDrawdownTHB = maxTotalPnL - currentTotalPnL; 
+            if (currentDrawdownTHB > maxDrawdownTHB) {
+                maxDrawdownTHB = currentDrawdownTHB; 
+            }
+
+            updateKPIs();
+        }
+
+        function updateKPIs() {
+            document.getElementById('current-price').innerText = currentPrice.toFixed(1);
+            document.getElementById('indicator-price').innerText = currentPrice.toFixed(1);
+            
+            let realizedColor = realizedPNL >= 0 ? 'text-emerald-600' : 'text-red-600';
+            document.getElementById('kpi-realized').innerHTML = `<span class="${realizedColor}">${realizedPNL >= 0 ? '+' : ''}฿${realizedPNL.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>`;
+            document.getElementById('kpi-comm').innerText = `หักค่าคอมฯ รวม: ฿${totalComm.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+            let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+            document.getElementById('kpi-hold').innerHTML = `${(activeCount * contracts).toLocaleString('en-US')} <span class="text-[10px] lg:text-sm font-normal text-gray-500">สัญญา</span>`;
+            let avgCost = activeCount > 0 ? (sumEntry / activeCount).toFixed(1) : '0.0';
+            document.getElementById('kpi-avg').innerText = `ทุนเฉลี่ย: ${avgCost}`;
+            document.getElementById('tab-open-count').innerText = activeCount; 
+
+            let unrealizedColor = currentUnrealizedPNL >= 0 ? 'text-emerald-600' : 'text-red-600';
+            document.getElementById('kpi-unrealized').innerHTML = `<span class="${unrealizedColor}">${currentUnrealizedPNL >= 0 ? '+' : ''}฿${currentUnrealizedPNL.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>`;
+            
+            let currentDrawdownPct = (currentDrawdownTHB / capital) * 100;
+            let maxDrawdownPct = (maxDrawdownTHB / capital) * 100;
+            document.getElementById('kpi-dd').innerText = `Max DD: -${maxDrawdownPct.toFixed(2)}% | Cur: -${currentDrawdownPct.toFixed(2)}%`;
+
+            let visLower = parseFloat(document.getElementById('vis-lower').innerText);
+            let visUpper = parseFloat(document.getElementById('vis-upper').innerText);
+            let percentage = 10 + ((currentPrice - visLower) / (visUpper - visLower)) * 80;
+            percentage = Math.max(0, Math.min(percentage, 100)); 
+            document.getElementById('price-indicator').style.left = `${percentage}%`;
+
+            if (currentTab === 'open') renderOpenOrders();
+        }
+
+        // --- Batch Fill Logic ---
+        function executeBatchFill(execPrice, timeStr) {
+            let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+            let batchedCount = 0;
+            
+            for (let i = 0; i < numGrids; i++) {
+                if (currentDirection === 'LONG') {
+                    if (pArr[i] >= execPrice) {
+                        activeArr[i] = 1;
+                        entryArr[i] = execPrice;
+                        activeCount++;
+                        sumEntry += execPrice;
+                        let comm = commission * contracts;
+                        realizedPNL -= comm;
+                        totalComm += comm;
+                        
+                        addLog(`Match Buy (Target: ${pArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
+                        batchedCount++;
+                    }
+                } else {
+                    if (pArr[i] <= execPrice) {
+                        activeArr[i] = 1;
+                        entryArr[i] = execPrice;
+                        activeCount++;
+                        sumEntry += execPrice;
+                        let comm = commission * contracts;
+                        realizedPNL -= comm;
+                        totalComm += comm;
+                        
+                        addLog(`Match Sell (Target: ${pArr[i].toFixed(1)})`, execPrice, contracts, null, timeStr);
+                        batchedCount++;
+                    }
+                }
+            }
+            if (batchedCount > 0) {
+                const logBox = document.getElementById('new-logs');
+                logBox.insertAdjacentHTML('beforeend', `<div class="text-gray-400 mt-1 mb-2">[${timeStr}] Data Feed Price : ${execPrice.toFixed(1)}</div>`);
+                
+                const scrollBox = document.getElementById('tab-activity');
+                scrollBox.scrollTop = scrollBox.scrollHeight;
+
+                calculateAndUpdateAll();
+            }
+        }
+
+        function forceStopBot(reason) {
+            const logBox = document.getElementById('new-logs');
+            logBox.insertAdjacentHTML('beforeend', `<div class="text-red-400 font-bold mt-2">[${new Date().toLocaleTimeString('en-GB', { hour12: false })}] SYSTEM HALTED: ${reason}</div>`);
+            
+            const scrollBox = document.getElementById('tab-activity');
+            scrollBox.scrollTop = scrollBox.scrollHeight;
+
+            isBotRunning = false;
+            clearInterval(priceInterval);
+            clearInterval(uptimeInterval);
+            clearInterval(autoSaveInterval);
+            
+            if (botStartTime) {
+                totalUptimeMs += (Date.now() - botStartTime);
+                botStartTime = null;
+            }
+            updateUptimeDisplay();
+            
+            const btnStart = document.getElementById('btn-start');
+            const btnStop = document.getElementById('btn-stop');
+            const statusBadge = document.getElementById('bot-status-badge');
+            
+            btnStop.classList.replace('bg-red-500', 'bg-gray-200');
+            btnStop.classList.replace('text-white', 'text-gray-500');
+            btnStop.classList.remove('hover:bg-red-600', 'shadow-lg', 'transform', 'hover:-translate-y-0.5');
+            btnStop.classList.add('cursor-not-allowed');
+            btnStop.disabled = true;
+
+            btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START';
+            btnStart.className = "flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-lg font-bold shadow-lg shadow-green-200 transition transform hover:-translate-y-0.5";
+            btnStart.disabled = false;
+
+            statusBadge.textContent = "หยุดทำงาน";
+            statusBadge.className = "px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200";
+
+            isResuming = false;
+
+            toggleSettingsLock(false);
+            document.getElementById('inp-adv-batch').checked = false;
+        }
+
+        function toggleBot(start) {
+            const btnStart = document.getElementById('btn-start');
+            const btnStop = document.getElementById('btn-stop');
+            const statusBadge = document.getElementById('bot-status-badge');
+            const logContainer = document.getElementById('new-logs');
+            let timeStr = new Date().toLocaleTimeString('en-GB', { hour12: false });
+
+            if (start) {
+                if (!isResuming) {
+                    const symbolStr = document.getElementById('inp-symbol').value.trim();
+                    const upperVal = parseFloat(document.getElementById('inp-upper').value);
+                    const lowerVal = parseFloat(document.getElementById('inp-lower').value);
+                    const spacingVal = parseFloat(document.getElementById('inp-spacing').value);
+                    const contractVal = parseInt(document.getElementById('inp-contracts').value, 10);
+
+                    if (!symbolStr) { showModal("ไม่สามารถเริ่มระบบได้", "กรุณาระบุ <b>Symbol</b> ให้ถูกต้อง", "error"); return; }
+                    if (isNaN(upperVal) || isNaN(lowerVal)) { showModal("ไม่สามารถเริ่มระบบได้", "กรุณาระบุ <b>กรอบบนและกรอบล่าง</b> ให้ถูกต้องเป็นตัวเลข", "error"); return; }
+                    if (upperVal <= lowerVal) { showModal("ไม่สามารถเริ่มระบบได้", "<b>กรอบบน</b> ต้องมีค่ามากกว่า <b>กรอบล่าง</b> เสมอ", "error"); return; }
+                    if (isNaN(spacingVal) || spacingVal <= 0) { showModal("ไม่สามารถเริ่มระบบได้", "<b>ระยะกริด</b> ต้องเป็นตัวเลขและมากกว่า 0 เสมอ", "error"); return; }
+                    if (isNaN(contractVal) || contractVal < 1) { showModal("ไม่สามารถเริ่มระบบได้", "<b>จำนวนสัญญา</b> ต้องเป็นจำนวนเต็มตั้งแต่ 1 ขึ้นไป", "error"); return; }
+
+                    const actValStr = document.getElementById('inp-risk-activation').value;
+                    if (actValStr !== '' && isNaN(parseFloat(actValStr))) { showModal("ไม่สามารถเริ่มระบบได้", "<b>ราคาเริ่มทำงาน</b> ไม่ถูกต้อง", "error"); return; }
+                    
+                    const slValStr = document.getElementById('inp-risk-sl').value;
+                    const checkSl = parseFloat(slValStr);
+                    if (slValStr !== '' && isNaN(checkSl)) { showModal("ไม่สามารถเริ่มระบบได้", "<b>ราคา Stop Loss</b> ไม่ถูกต้อง", "error"); return; }
+                    
+                    const tprValStr = document.getElementById('inp-risk-tp-realized').value;
+                    if (tprValStr !== '' && isNaN(parseFloat(tprValStr))) { showModal("ไม่สามารถเริ่มระบบได้", "ค่า <b>หยุดระบบเมื่อ Realized</b> ไม่ถูกต้อง", "error"); return; }
+                    
+                    const tpuValStr = document.getElementById('inp-risk-tp-unrealized').value;
+                    if (tpuValStr !== '' && isNaN(parseFloat(tpuValStr))) { showModal("ไม่สามารถเริ่มระบบได้", "ค่า <b>หยุดระบบเมื่อ Unrealized</b> ไม่ถูกต้อง", "error"); return; }
+
+                    if (!isNaN(checkSl)) {
+                        if (currentDirection === 'LONG' && checkSl >= lowerVal) {
+                            showModal("ตั้งค่า Stop Loss ไม่ถูกต้อง", `ในโหมด <b>LONG</b> ราคา Stop Loss (${checkSl}) ต้องตั้งไว้ <b>ต่ำกว่ากรอบล่าง</b> (${lowerVal})<br><br><span class="text-xs text-gray-500">เหตุผล: ในโหมด LONG คุณจะขาดทุนเมื่อราคาลง ดังนั้นจุดยอมแพ้ (SL) ต้องอยู่ใต้กรอบล่างสุด</span>`, "error");
+                            return;
+                        }
+                        if (currentDirection === 'SHORT' && checkSl <= upperVal) {
+                            showModal("ตั้งค่า Stop Loss ไม่ถูกต้อง", `ในโหมด <b>SHORT</b> ราคา Stop Loss (${checkSl}) ต้องตั้งไว้ <b>สูงกว่ากรอบบน</b> (${upperVal})<br><br><span class="text-xs text-gray-500">เหตุผล: ในโหมด SHORT คุณจะขาดทุนเมื่อราคาขึ้น ดังนั้นจุดยอมแพ้ (SL) ต้องอยู่เหนือกรอบบนสุด</span>`, "error");
+                            return;
+                        }
+                    }
+
+                    upperLimit = upperVal;
+                    lowerLimit = lowerVal;
+                    gridSpacing = spacingVal;
+
+                    let actVal = parseFloat(actValStr);
+                    activationTarget = !isNaN(actVal) ? actVal : null;
+                    stopLossTarget = !isNaN(checkSl) ? checkSl : null;
+                    let tprVal = parseFloat(tprValStr);
+                    targetRealized = !isNaN(tprVal) ? tprVal : null;
+                    let tpuVal = parseFloat(tpuValStr);
+                    targetUnrealized = !isNaN(tpuVal) ? tpuVal : null;
+                    
+                    currentPrice = parseFloat(((upperLimit + lowerLimit) / 2).toFixed(1)); 
+
+                    updateVisualGrid();
+
+                    numGrids = Math.floor((upperLimit - lowerLimit) / gridSpacing) + 1;
+                    pArr = new Float64Array(numGrids);
+                    tArr = new Float64Array(numGrids);
+                    activeArr = new Uint8Array(numGrids);
+                    entryArr = new Float64Array(numGrids);
+                    
+                    for (let i = 0; i < numGrids; i++) {
+                        pArr[i] = lowerLimit + (i * gridSpacing);
+                        tArr[i] = currentDirection === 'LONG' ? pArr[i] + gridSpacing : pArr[i] - gridSpacing;
+                    }
+                    
+                    realizedPNL = 0; totalComm = 0; activeCount = 0; sumEntry = 0; matchedCycles = 0;
+                    currentUnrealizedPNL = 0; maxTotalPnL = 0; currentDrawdownTHB = 0; maxDrawdownTHB = 0;
+                    totalUptimeMs = 0; 
+                    
+                    logContainer.innerHTML = ''; 
+                    closedTradesHistory = [];
+                } else {
+                    logContainer.insertAdjacentHTML('beforeend', `<div class="text-yellow-400 mt-2">[${timeStr}] ▶️ BOT RE-STARTED. Resuming Grid Operations.</div>`);
+                    isResuming = false; 
+                }
+
+                botStartTime = Date.now();
+                document.getElementById('uptime-container').classList.remove('hidden');
+                document.getElementById('uptime-container').classList.add('flex');
+                uptimeInterval = setInterval(updateUptimeDisplay, 1000);
+                updateUptimeDisplay();
+
+                btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START'; 
+                btnStart.className = "flex-1 bg-gray-200 text-gray-500 py-3 rounded-lg font-bold transition cursor-not-allowed";
+                btnStart.disabled = true;
+
+                btnStop.classList.replace('bg-gray-200', 'bg-red-500');
+                btnStop.classList.replace('text-gray-500', 'text-white');
+                btnStop.classList.add('hover:bg-red-600', 'shadow-lg', 'shadow-red-200', 'transform', 'hover:-translate-y-0.5');
+                btnStop.classList.remove('cursor-not-allowed');
+                btnStop.disabled = false;
+
+                statusBadge.textContent = "กำลังทำงาน";
+                statusBadge.className = "px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200 animate-pulse";
+
+                toggleSettingsLock(true);
+
+                if (!isBotRunning && !document.getElementById('new-logs').innerHTML.includes('RE-STARTED')) {
+                    let isBatchFill = document.getElementById('inp-adv-batch').checked;
+                    
+                    if (activationTarget !== null && !isNaN(activationTarget)) {
+                        isWaitingActivation = true;
+                        
+                        if (currentDirection === 'LONG' && activationTarget > currentPrice) {
+                            isWaitingActivation = false; 
+                        } else if (currentDirection === 'SHORT' && activationTarget < currentPrice) {
+                            isWaitingActivation = false; 
+                        } else if (activationTarget === currentPrice) {
+                            isWaitingActivation = false;
+                        } else {
+                            activationDirection = Math.sign(activationTarget - currentPrice);
+                        }
+                        
+                        if (isWaitingActivation) {
+                            logContainer.innerHTML += `<div class="text-yellow-400 mt-2">[${timeStr}] BOT STANDBY. Waiting for price to cross @${activationTarget.toFixed(1)}</div>`;
+                        } else {
+                            logContainer.innerHTML += `<div class="text-green-400 mt-2">[${timeStr}] BOT STARTED in ${currentDirection} MODE. Grids initialized.</div>`;
+                            
+                            let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+                            for (let i = numGrids - 1; i >= 0; i--) {
+                                let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
+                                addLog(action, pArr[i], contracts, null, timeStr);
+                            }
+
+                            if (isBatchFill) executeBatchFill(currentPrice, timeStr);
+                        }
+                    } else {
+                        isWaitingActivation = false;
+                        logContainer.innerHTML += `<div class="text-green-400 mt-2">[${timeStr}] BOT STARTED in ${currentDirection} MODE. Grids initialized.</div>`;
+                        
+                        let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+                        for (let i = numGrids - 1; i >= 0; i--) {
+                            let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
+                            addLog(action, pArr[i], contracts, null, timeStr);
+                        }
+
+                        if (isBatchFill) executeBatchFill(currentPrice, timeStr);
+                    }
+                }
+
+                calculateAndUpdateAll();
+                if (currentTab === 'history') renderOrderHistory();
+
+                isBotRunning = true;
+                priceInterval = setInterval(simulatePriceMovement, 2000);
+                
+                // บังคับ Auto-Save เสมอ ทุกๆ 1 นาที (60000ms) ขณะที่บอททำงาน
+                autoSaveInterval = setInterval(executeAutoSave, 60000);
+
+            } else {
+                btnStop.classList.replace('bg-red-500', 'bg-gray-200');
+                btnStop.classList.replace('text-white', 'text-gray-500');
+                btnStop.classList.remove('hover:bg-red-600', 'shadow-lg', 'shadow-red-200', 'transform', 'hover:-translate-y-0.5');
+                btnStop.classList.add('cursor-not-allowed');
+                btnStop.disabled = true;
+
+                btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START';
+                btnStart.className = "flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-lg font-bold shadow-lg shadow-green-200 transition transform hover:-translate-y-0.5";
+                btnStart.disabled = false;
+
+                statusBadge.textContent = "หยุดทำงาน";
+                statusBadge.className = "px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200";
+
+                toggleSettingsLock(false);
+                document.getElementById('inp-adv-batch').checked = false;
+
+                logContainer.insertAdjacentHTML('beforeend', `<div class="text-red-400 mt-2">[${timeStr}] BOT HALTED. Stopped processing ticks.</div>`);
+                
+                isBotRunning = false;
+                isResuming = false;
+                clearInterval(priceInterval);
+                clearInterval(uptimeInterval);
+                clearInterval(autoSaveInterval);
+                
+                if (botStartTime) {
+                    totalUptimeMs += (Date.now() - botStartTime);
+                    botStartTime = null;
+                }
+                updateUptimeDisplay();
+            }
+            const scrollBox = document.getElementById('tab-activity');
+            scrollBox.scrollTop = scrollBox.scrollHeight;
+        }
+
+        // --- Core Engine Logic ---
+        function simulatePriceMovement() {
+            const change = parseFloat((Math.random() * 6 - 3).toFixed(1));
+            let newPrice = parseFloat((currentPrice + change).toFixed(1));
+            
+            const trendIcon = document.getElementById('price-trend');
+            trendIcon.className = newPrice >= currentPrice ? "fa-solid fa-caret-up text-green-500 text-md lg:text-lg ml-2" : "fa-solid fa-caret-down text-red-500 text-md lg:text-lg ml-2";
+
+            let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+            let isLPR = document.getElementById('inp-adv-lpr').checked;
+            let startP = currentPrice;
+            let endP = newPrice;
+            let timeStr = new Date().toLocaleTimeString('en-GB', { hour12: false });
+
+            if (stopLossTarget !== null && !isNaN(stopLossTarget)) {
+                if ((currentDirection === 'LONG' && newPrice <= stopLossTarget) || 
+                    (currentDirection === 'SHORT' && newPrice >= stopLossTarget)) {
+                    currentPrice = newPrice;
+                    addLog('STOP LOSS', newPrice, 0, null, timeStr);
+                    calculateAndUpdateAll();
+                    forceStopBot(`STOP LOSS HIT @${newPrice.toFixed(1)}`);
+                    return;
+                }
+            }
+
+            if (isWaitingActivation) {
+                let triggered = false;
+                if (activationDirection > 0 && newPrice >= activationTarget) triggered = true;
+                if (activationDirection <= 0 && newPrice <= activationTarget) triggered = true;
+
+                if (triggered) {
+                    isWaitingActivation = false;
+                    const logBox = document.getElementById('new-logs');
+                    logBox.insertAdjacentHTML('beforeend', `<div class="text-yellow-300">[${timeStr}] SYSTEM ACTIVATED @${newPrice.toFixed(1)}. Grids are now active.</div>`);
+                    
+                    let contracts = parseInt(document.getElementById('inp-contracts').value, 10) || 1;
+                    for (let i = numGrids - 1; i >= 0; i--) {
+                        let action = currentDirection === 'LONG' ? 'PENDING BUY' : 'PENDING SELL';
+                        addLog(action, pArr[i], contracts, null, timeStr);
+                    }
+
+                    let isBatchFill = document.getElementById('inp-adv-batch').checked;
+                    if (isBatchFill) executeBatchFill(newPrice, timeStr);
+                } else {
+                    currentPrice = newPrice;
+                    calculateAndUpdateAll();
+                    return; 
+                }
+            }
+
+            if (currentDirection === 'LONG') {
+                if (startP > endP) { 
+                    let start = Math.max(0, Math.floor((endP - lowerLimit) / gridSpacing) - 2);
+                    let end = Math.min(numGrids - 1, Math.ceil((startP - lowerLimit) / gridSpacing) + 2);
+                    for (let j = end; j >= start; j--) {
+                        if (activeArr[j] === 0 && startP >= pArr[j] && endP <= pArr[j]) {
+                            activeArr[j] = 1; entryArr[j] = pArr[j]; activeCount++; sumEntry += pArr[j];
+                            const comm = commission * contracts; realizedPNL -= comm; totalComm += comm;
+                            addLog('BUY (OPEN)', pArr[j], contracts, null, timeStr);
+                        }
+                    }
+                } else if (startP < endP) { 
+                    let start = Math.max(0, Math.floor((startP - lowerLimit) / gridSpacing) - 2);
+                    let end = Math.min(numGrids - 1, Math.ceil((endP - lowerLimit) / gridSpacing) + 2);
+                    for (let j = start; j <= end; j++) {
+                        if (activeArr[j] === 1 && startP <= tArr[j] && endP >= tArr[j]) {
+                            if (isLPR && j === numGrids - 1) continue;
+                            
+                            activeArr[j] = 0; activeCount--; sumEntry -= entryArr[j]; matchedCycles++;
+                            const comm = commission * contracts; totalComm += comm;
+                            const grossPnl = (tArr[j] - entryArr[j]) * multiplier * contracts;
+                            const netPnl = grossPnl - (comm * 2);
+                            realizedPNL += netPnl + comm; 
+                            addLog('SELL (CLOSE)', tArr[j], contracts, netPnl, timeStr);
+                            
+                            closedTradesHistory.push({ time: timeStr, action: 'LONG (CLOSE)', openPrice: entryArr[j], closePrice: tArr[j], pnl: netPnl });
+                            if (currentTab === 'history') renderOrderHistory();
+                        }
+                    }
+                }
+            } else {
+                if (startP < endP) { 
+                    let start = Math.max(0, Math.floor((startP - lowerLimit) / gridSpacing) - 2);
+                    let end = Math.min(numGrids - 1, Math.ceil((endP - lowerLimit) / gridSpacing) + 2);
+                    for (let j = start; j <= end; j++) {
+                        if (activeArr[j] === 0 && startP <= pArr[j] && endP >= pArr[j]) {
+                            activeArr[j] = 1; entryArr[j] = pArr[j]; activeCount++; sumEntry += pArr[j];
+                            const comm = commission * contracts; realizedPNL -= comm; totalComm += comm;
+                            addLog('SELL (SHORT)', pArr[j], contracts, null, timeStr);
+                        }
+                    }
+                } else if (startP > endP) { 
+                    let start = Math.max(0, Math.floor((endP - lowerLimit) / gridSpacing) - 2);
+                    let end = Math.min(numGrids - 1, Math.ceil((startP - lowerLimit) / gridSpacing) + 2);
+                    for (let j = end; j >= start; j--) {
+                        if (activeArr[j] === 1 && startP >= tArr[j] && endP <= tArr[j]) {
+                            if (isLPR && j === 0) continue;
+
+                            activeArr[j] = 0; activeCount--; sumEntry -= entryArr[j]; matchedCycles++;
+                            const comm = commission * contracts; totalComm += comm;
+                            const grossPnl = (entryArr[j] - tArr[j]) * multiplier * contracts;
+                            const netPnl = grossPnl - (comm * 2);
+                            realizedPNL += netPnl + comm;
+                            addLog('BUY (COVER)', tArr[j], contracts, netPnl, timeStr);
+                            
+                            closedTradesHistory.push({ time: timeStr, action: 'SHORT (COVER)', openPrice: entryArr[j], closePrice: tArr[j], pnl: netPnl });
+                            if (currentTab === 'history') renderOrderHistory();
+                        }
+                    }
+                }
+            }
+
+            currentPrice = newPrice;
+            calculateAndUpdateAll();
+
+            if (newPrice !== startP) {
+                const logBox = document.getElementById('new-logs');
+                logBox.insertAdjacentHTML('beforeend', `<div class="text-gray-400 mt-1 mb-2">[${timeStr}] Data Feed Price : ${newPrice.toFixed(1)}</div>`);
+                
+                while (logBox.children.length > 500) {
+                    logBox.removeChild(logBox.firstChild);
+                }
+                
+                const scrollBox = document.getElementById('tab-activity');
+                scrollBox.scrollTop = scrollBox.scrollHeight;
+            }
+
+            if (targetRealized !== null && !isNaN(targetRealized) && realizedPNL >= targetRealized) {
+                forceStopBot(`REALIZED TARGET REACHED (+${realizedPNL.toFixed(2)})`);
+                return;
+            }
+
+            if (targetUnrealized !== null && !isNaN(targetUnrealized)) {
+                if (targetUnrealized > 0 && currentUnrealizedPNL >= targetUnrealized) {
+                    forceStopBot(`UNREALIZED TARGET REACHED (+${currentUnrealizedPNL.toFixed(2)})`);
+                    return;
+                } else if (targetUnrealized < 0 && currentUnrealizedPNL <= targetUnrealized) {
+                    forceStopBot(`UNREALIZED STOP HIT (${currentUnrealizedPNL.toFixed(2)})`);
+                    return;
+                }
+            }
+        }
+
+        // --- Security & Anti-Copy System ---
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || e.keyCode === 123) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) { e.preventDefault(); return false; }
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's' || e.key === 'P' || e.key === 'p')) { e.preventDefault(); return false; }
+            if (e.ctrlKey && (e.key === 'C' || e.key === 'c' || e.key === 'X' || e.key === 'x')) {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); return false; }
+            }
+        });
+
+        document.addEventListener('copy', function(e) {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); }
+        });
+    </script>
+</body>
+</html>
