@@ -792,7 +792,7 @@
                 };
             } catch (error) {
                 console.warn("Error parsing CSV line:", line, error);
-                return null; // ป้องกันบอทพังหากมีข้อมูลผิดรูป
+                return null; 
             }
         }
 
@@ -929,6 +929,19 @@
             }
         }
 
+        // 🛡️ Function เพื่อยกเลิกโหมดกู้คืน (RE-START) เมื่อผู้ใช้เปลี่ยนการตั้งค่า
+        function cancelResume() {
+            if (isResuming && !isBotRunning) {
+                isResuming = false;
+                const btnStart = document.getElementById('btn-start');
+                btnStart.innerHTML = '<i class="fa-solid fa-play mr-2"></i> START';
+                btnStart.className = "flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-lg font-bold shadow-lg shadow-green-200 transition transform hover:-translate-y-0.5";
+                
+                let timeStr = getCurrentTimeStr();
+                addSystemLog(`[${timeStr}] ⚠️ ตรวจพบการแก้ไขโครงสร้างกริด เปลี่ยนเป็นโหมดเริ่มระบบใหม่ (START)`, "text-yellow-400 font-bold mt-1");
+            }
+        }
+
         // 🛡️ Divide by zero protection in Visual Grid Calculation
         function updateVisualGrid() {
             let upper = parseFloat(document.getElementById('inp-upper').value);
@@ -969,13 +982,14 @@
             document.getElementById('nav-tab-symbol').innerText = `${symbol}_${currentDirection}`;
         }
 
-        document.getElementById('inp-upper').addEventListener('input', updateVisualGrid);
-        document.getElementById('inp-lower').addEventListener('input', updateVisualGrid);
-        document.getElementById('inp-risk-sl').addEventListener('input', updateVisualGrid);
+        // จับตาดูการแก้ไขช่องกรอกข้อมูล หากเปลี่ยนโครงสร้างกริด ให้ยกเลิกโหมดกู้คืน (RE-START -> START)
+        document.getElementById('inp-upper').addEventListener('input', () => { updateVisualGrid(); cancelResume(); });
+        document.getElementById('inp-lower').addEventListener('input', () => { updateVisualGrid(); cancelResume(); });
+        document.getElementById('inp-spacing').addEventListener('input', cancelResume);
         document.getElementById('inp-symbol').addEventListener('input', () => {
             updateNavTab();
-            // Clear worker variables when symbol changes to prevent Ghost Intervals
             if (!isBotRunning) clearAllWorkers();
+            cancelResume();
         }); 
         
         window.addEventListener('DOMContentLoaded', () => {
@@ -1004,7 +1018,10 @@
                 showModal("แจ้งเตือน", "ไม่สามารถเปลี่ยนทิศทางได้ในขณะที่บอทกำลังทำงาน", "warning");
                 return;
             }
-            setDirectionUI(dir);
+            if (currentDirection !== dir) {
+                setDirectionUI(dir);
+                cancelResume();
+            }
         }
 
         function toggleSettingsLock(isLocked) {
@@ -1128,15 +1145,19 @@
         }
 
         function applySaveData(saveData) {
+            // [Fix] บังคับให้ช่องกรอกข้อมูล (Input) แสดงตัวเลขจริงจาก State ที่บอทใช้ทำงาน 100%
+            document.getElementById('inp-upper').value = saveData.state.upperLimit !== undefined ? saveData.state.upperLimit : (saveData.inputs.upper || '');
+            document.getElementById('inp-lower').value = saveData.state.lowerLimit !== undefined ? saveData.state.lowerLimit : (saveData.inputs.lower || '');
+            document.getElementById('inp-spacing').value = saveData.state.gridSpacing !== undefined ? saveData.state.gridSpacing : (saveData.inputs.spacing || '');
+            
             document.getElementById('inp-symbol').value = saveData.inputs.symbol || '';
-            document.getElementById('inp-upper').value = saveData.inputs.upper || '';
-            document.getElementById('inp-lower').value = saveData.inputs.lower || '';
-            document.getElementById('inp-spacing').value = saveData.inputs.spacing || '';
-            document.getElementById('inp-contracts').value = saveData.inputs.contracts || '';
-            document.getElementById('inp-risk-activation').value = saveData.inputs.riskActivation || '';
-            document.getElementById('inp-risk-sl').value = saveData.inputs.riskSl || '';
-            document.getElementById('inp-risk-tp-realized').value = saveData.inputs.riskTpRealized || '';
-            document.getElementById('inp-risk-tp-unrealized').value = saveData.inputs.riskTpUnrealized || '';
+            document.getElementById('inp-contracts').value = saveData.inputs.contracts || '1';
+            
+            document.getElementById('inp-risk-activation').value = saveData.state.activationTarget !== null && saveData.state.activationTarget !== undefined ? saveData.state.activationTarget : '';
+            document.getElementById('inp-risk-sl').value = saveData.state.stopLossTarget !== null && saveData.state.stopLossTarget !== undefined ? saveData.state.stopLossTarget : '';
+            document.getElementById('inp-risk-tp-realized').value = saveData.state.targetRealized !== null && saveData.state.targetRealized !== undefined ? saveData.state.targetRealized : '';
+            document.getElementById('inp-risk-tp-unrealized').value = saveData.state.targetUnrealized !== null && saveData.state.targetUnrealized !== undefined ? saveData.state.targetUnrealized : '';
+
             document.getElementById('inp-adv-batch').checked = saveData.inputs.advBatch || false;
             document.getElementById('inp-adv-lpr').checked = saveData.inputs.advLpr || false;
 
@@ -1603,7 +1624,7 @@
                 }
 
                 const executeStartup = async (isInitialClick = false) => {
-                    let oldCurrentPrice = currentPrice; // Save old price before syncing
+                    let oldCurrentPrice = currentPrice; 
 
                     if (isInitialClick) {
                         btnStart.disabled = true;
@@ -1913,11 +1934,16 @@
             let startP = currentPrice;
             let endP = newPrice;
 
-            lastTickTimeMs = tickData.timeMs;
+            let parsedTimeMs = tickData.timeMs;
+            let isDisconnectGap = false;
 
-            // 🛡️ Gap Logic: ตรวจจับราคาเปิดกระโดด (Price Gap) ข้ามไม้ Pending
-            // หากเป็นสถานะ 'Open' ของแท่งเทียนใหม่ แปลว่าราคากระโดดจาก Close แท่งก่อนโดยไม่วิ่งผ่านราคาตรงกลาง
-            let isGap = (tickData.phase === 'Open');
+            if (lastTickTimeMs !== null) {
+                let diffMs = parsedTimeMs - lastTickTimeMs;
+                if (diffMs > 30 * 60 * 1000) isDisconnectGap = true; 
+            }
+            lastTickTimeMs = parsedTimeMs;
+
+            let isPriceGap = (tickData.isNewCandle === true || isDisconnectGap === true);
 
             // 🛡️ SL Liquidation
             if (stopLossTarget !== null && !isNaN(stopLossTarget)) {
@@ -1968,11 +1994,11 @@
                         if (activeArr[j] === 0 && startP >= pArr[j] && endP <= pArr[j]) {
                             
                             let execPrice = pArr[j];
-                            if (isGap) execPrice = endP; // แมทช์ที่ราคาเปิด Gap ล่าสุด
+                            if (isPriceGap) execPrice = endP; 
 
                             activeArr[j] = 1; entryArr[j] = execPrice; activeCount++; sumEntry += execPrice;
                             const comm = commission * contracts; realizedPNL -= comm; totalComm += comm;
-                            addLog(isGap ? 'BUY (GAP)' : 'BUY (OPEN)', execPrice, contracts, null, timeStr);
+                            addLog(isPriceGap ? 'BUY (GAP)' : 'BUY (OPEN)', execPrice, contracts, null, timeStr);
                         }
                     }
                 } else if (startP < endP) { 
@@ -1981,7 +2007,7 @@
                             if (isLPR && j === numGrids - 1) continue;
                             
                             let execPrice = tArr[j];
-                            if (isGap) execPrice = endP; // แมทช์ที่ราคาเปิด Gap ล่าสุด
+                            if (isPriceGap) execPrice = endP;
 
                             activeArr[j] = 0; activeCount--; sumEntry -= entryArr[j]; matchedCycles++;
                             const comm = commission * contracts; totalComm += comm;
@@ -1992,9 +2018,9 @@
                             netPnl = Math.round(netPnl * 100) / 100;
                             
                             realizedPNL += netPnl + comm; 
-                            addLog(isGap ? 'SELL (GAP)' : 'SELL (CLOSE)', execPrice, contracts, netPnl, timeStr);
+                            addLog(isPriceGap ? 'SELL (GAP)' : 'SELL (CLOSE)', execPrice, contracts, netPnl, timeStr);
                             
-                            closedTradesHistory.push({ time: timeStr, action: isGap ? 'LONG (GAP)' : 'LONG (CLOSE)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
+                            closedTradesHistory.push({ time: timeStr, action: isPriceGap ? 'LONG (GAP)' : 'LONG (CLOSE)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
                             if (currentTab === 'history') renderOrderHistory();
                         }
                     }
@@ -2005,11 +2031,11 @@
                         if (activeArr[j] === 0 && startP <= pArr[j] && endP >= pArr[j]) {
                             
                             let execPrice = pArr[j];
-                            if (isGap) execPrice = endP; // แมทช์ที่ราคาเปิด Gap ล่าสุด
+                            if (isPriceGap) execPrice = endP;
 
                             activeArr[j] = 1; entryArr[j] = execPrice; activeCount++; sumEntry += execPrice;
                             const comm = commission * contracts; realizedPNL -= comm; totalComm += comm;
-                            addLog(isGap ? 'SHORT (GAP)' : 'SELL (SHORT)', execPrice, contracts, null, timeStr);
+                            addLog(isPriceGap ? 'SHORT (GAP)' : 'SELL (SHORT)', execPrice, contracts, null, timeStr);
                         }
                     }
                 } else if (startP > endP) { 
@@ -2018,7 +2044,7 @@
                             if (isLPR && j === 0) continue;
 
                             let execPrice = tArr[j];
-                            if (isGap) execPrice = endP; // แมทช์ที่ราคาเปิด Gap ล่าสุด
+                            if (isPriceGap) execPrice = endP;
 
                             activeArr[j] = 0; activeCount--; sumEntry -= entryArr[j]; matchedCycles++;
                             const comm = commission * contracts; totalComm += comm;
@@ -2029,9 +2055,9 @@
                             netPnl = Math.round(netPnl * 100) / 100;
                             
                             realizedPNL += netPnl + comm;
-                            addLog(isGap ? 'COVER (GAP)' : 'BUY (COVER)', execPrice, contracts, netPnl, timeStr);
+                            addLog(isPriceGap ? 'COVER (GAP)' : 'BUY (COVER)', execPrice, contracts, netPnl, timeStr);
                             
-                            closedTradesHistory.push({ time: timeStr, action: isGap ? 'SHORT (GAP)' : 'SHORT (COVER)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
+                            closedTradesHistory.push({ time: timeStr, action: isPriceGap ? 'SHORT (GAP)' : 'SHORT (COVER)', openPrice: entryArr[j], closePrice: execPrice, pnl: netPnl });
                             if (currentTab === 'history') renderOrderHistory();
                         }
                     }
